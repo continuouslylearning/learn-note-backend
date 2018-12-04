@@ -2,9 +2,9 @@
   "name": "learn-note-backend",
   "version": "1.0.0",
   "description": "learn-note-backend",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "node index.js",
     "heroku": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
