@@ -18,19 +18,13 @@ const authRouter = require('./routes/auth');
 
 const app = express();
 
-
-
 app.use(
   morgan(process.env.NODE_ENV === 'production' ? 'common' : 'dev', {
     skip: (req, res) => process.env.NODE_ENV === 'test'
   })
 );
 
-app.use(
-  cors({
-    origin: CLIENT_ORIGIN
-  })
-);
+app.use(cors({ origin: CLIENT_ORIGIN }));
 
 app.use('/api/users', usersRouter);
 app.use('/auth', authRouter);
