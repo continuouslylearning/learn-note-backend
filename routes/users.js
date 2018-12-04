@@ -70,6 +70,4 @@ router.post('/', express.json(), (req, res, next) => {
     .catch(next);
 });
 
-
-
 module.exports = router;

@@ -12,6 +12,16 @@ class User extends Model {
     return bcrypt.hash(password, 10);
   }
 
+  validatePassword(password){
+    return bcrypt.compare(password, this.password);
+  }
+
+  serialize(){
+    return {
+      id: this.id,
+      username: this.username
+    };
+  }
   // validate user instances
   static get jsonSchema() {
     return {
