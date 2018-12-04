@@ -10,9 +10,9 @@ module.exports = function localAuth(req, res, next){
 
   let user;
   User.query().where({ username })
-    .then(_user => {
-      user = _user;
-      if(!user.length){
+    .then(users => {
+      user = users[0];
+      if(!users.length){
         const err = new Error('Username does not exist');
         err.status = 401;
         return Promise.reject(err);

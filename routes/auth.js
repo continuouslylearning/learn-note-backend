@@ -19,3 +19,11 @@ router.post('/login', localAuth, (req, res) => {
   const authToken = createAuthToken(user);
   res.json({ authToken });
 });
+
+router.post('/refresh', jwtAuth, (req, res) => {
+  const user = req.user;
+  const authToken = createAuthToken(user);
+  res.json({ authToken});
+});
+
+module.exports = router;

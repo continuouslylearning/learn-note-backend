@@ -14,6 +14,7 @@ const knex = dbGet();
 Model.knex(knex);
 
 const usersRouter = require('./routes/users');
+const authRouter = require('./routes/auth');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(
 );
 
 app.use('/api/users', usersRouter);
+app.use('/auth', authRouter);
 
 app.use((req, res, next) => {
   const err = new Error('Not found');

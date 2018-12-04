@@ -11,17 +11,6 @@ class User extends Model {
   static hashPassword(password){
     return bcrypt.hash(password, 10);
   }
-
-  validatePassword(password){
-    return bcrypt.compare(password, this.password);
-  }
-
-  serialize(){
-    return {
-      id: this.id,
-      username: this.username
-    };
-  }
   // validate user instances
   static get jsonSchema() {
     return {
@@ -33,6 +22,17 @@ class User extends Model {
         username: { type: 'string', minLength: 5, maxLength: 20 },
         password: { type: 'string', minLength: 10, maxLength: 100 }
       }
+    };
+  }
+
+  validatePassword(password){
+    return bcrypt.compare(password, this.password);
+  }
+
+  serialize(){
+    return {
+      id: this.id,
+      username: this.username
     };
   }
 }
