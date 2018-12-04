@@ -10,7 +10,7 @@ function jwtAuth(req, res, next){
     return next(err);
   }
 
-  const [ scheme, token] = auth.split(' ');
+  const [ scheme, token ] = auth.split(' ');
 
   if(scheme !== 'Bearer' ||!token){
     const err = new Error('Token is missing');
