@@ -4,7 +4,7 @@ const User = require('../models/user');
 
 const router = express.Router();
 
-router.post('/', (req, res, next) => {
+router.post('/', express.json(), (req, res, next) => {
 
   const { username, password } = req.body;
   const requiredFields = ['username', 'password'];
@@ -52,6 +52,22 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
+  User.query().where({ username })
+    .then(user => {
+      if(user.length){
+        const err = new Error('Username already exists');
+        err.status = 422;
+        return Promise.reject(err);
+      }
+      return User.hashPassword(password);
+    })
+    .then(hash => {
+      return User.query().insert({ username, password: hash });
+    })
+    .then(user => {
+      return res.status(201).json(user); 
+    })
+    .catch(next);
 });
 
 

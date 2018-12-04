@@ -4,15 +4,20 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { Model } = require('objection');
-
+const { dbConnect, dbGet } = require('./db');
 
 const { PORT, CLIENT_ORIGIN } = require('./config');
 
 // binds all models to knex instance
-const knex = require('./db').dbGet();
+dbConnect();
+const knex = dbGet();
 Model.knex(knex);
 
+const usersRouter = require('./routes/users');
+
 const app = express();
+
+
 
 app.use(
   morgan(process.env.NODE_ENV === 'production' ? 'common' : 'dev', {
@@ -25,6 +30,8 @@ app.use(
     origin: CLIENT_ORIGIN
   })
 );
+
+app.use('/api/users', usersRouter);
 
 app.use((req, res, next) => {
   const err = new Error('Not found');
