@@ -8,11 +8,6 @@ const { dbConnect, dbGet } = require('./db');
 
 const { PORT, CLIENT_ORIGIN } = require('./config');
 
-// binds all models to knex instance
-dbConnect();
-const knex = dbGet();
-Model.knex(knex);
-
 const usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
 
@@ -61,6 +56,10 @@ function runServer(port = PORT) {
 
 if (require.main === module) {
   runServer();
+  // binds all models to knex instance
+  dbConnect();
+  const knex = dbGet();
+  Model.knex(knex);
 }
 
 module.exports = { app };
