@@ -19,8 +19,8 @@ class User extends Model {
 
       properties: {
         id: { type: 'integer' },
-        username: { type: 'string', minLength: 5, maxLength: 20 },
-        password: { type: 'string', minLength: 10, maxLength: 100 }
+        username: { type: 'string', minLength: 5 },
+        password: { type: 'string', minLength: 10 }
       }
     };
   }
