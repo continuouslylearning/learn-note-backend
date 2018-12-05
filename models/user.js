@@ -7,11 +7,10 @@ class User extends Model {
     return 'users';
   }
 
-  // hash password before inserting user record into the database
   static hashPassword(password){
     return bcrypt.hash(password, 10);
   }
-  // validate user instances
+
   static get jsonSchema() {
     return {
       type: 'object',
@@ -19,7 +18,7 @@ class User extends Model {
 
       properties: {
         id: { type: 'integer' },
-        name: { type: 'string', minLength: 5 },
+        name: { type: 'string' },
         password: { type: 'string', minLength: 10 },
         email: { type: 'string' }
       }

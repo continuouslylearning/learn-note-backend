@@ -57,10 +57,9 @@ function runServer(port = PORT) {
 
 if (require.main === module) {
   runServer();
-  // binds all models to knex instance
   dbConnect();
   const knex = dbGet();
   Model.knex(knex);
 }
 
-module.exports = { app };
+module.exports = app;

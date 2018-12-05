@@ -3,7 +3,7 @@ const User = require('../models/user');
 module.exports = function localAuth(req, res, next){
   const { email, password } = req.body;
   if(!email || !password){
-    const err = new Error('Missing username or password');
+    const err = new Error('Missing email or password');
     err.status = 422;
     return next(err);
   }
