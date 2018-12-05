@@ -1,36 +1,38 @@
 {
-  "name": "learn-note-backend",
-  "version": "1.0.0",
-  "description": "learn-note-backend",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "heroku": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/continuouslylearning/learn-note-backend.git"
-  },
-  "author": "The Best Team",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/continuouslylearning/learn-note-backend/issues"
-  },
-  "homepage": "https://github.com/continuouslylearning/learn-note-backend#readme",
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "express": "^4.16.4",
-    "jsonwebtoken": "^8.4.0",
-    "knex": "^0.15.2",
-    "morgan": "^1.9.1",
-    "objection": "^1.4.0",
-    "pg": "^7.7.1"
-  },
-  "devDependencies": {
-    "chai": "^4.2.0",
-    "chai-http": "^4.2.0",
-    "mocha": "^5.2.0"
-  }
+	"name": "learn-note-backend",
+	"version": "1.0.0",
+	"description": "learn-note-backend",
+	"main": "index.js",
+	"scripts": {
+		"start": "node index.js",
+		"dev": "nodemon index.js",
+		"seed": "node seed.js",
+		"heroku": "node index.js",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/continuouslylearning/learn-note-backend.git"
+	},
+	"author": "The Best Team",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/continuouslylearning/learn-note-backend/issues"
+	},
+	"homepage": "https://github.com/continuouslylearning/learn-note-backend#readme",
+	"dependencies": {
+		"bcryptjs": "^2.4.3",
+		"cors": "^2.8.5",
+		"express": "^4.16.4",
+		"jsonwebtoken": "^8.4.0",
+		"knex": "^0.15.2",
+		"morgan": "^1.9.1",
+		"objection": "^1.4.0",
+		"pg": "^7.7.1"
+	},
+	"devDependencies": {
+		"chai": "^4.2.0",
+		"chai-http": "^4.2.0",
+		"mocha": "^5.2.0"
+	}
 }
