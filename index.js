@@ -20,6 +20,7 @@ app.use(
 );
 
 app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(express.json());
 
 app.use('/api/users', usersRouter);
 app.use('/auth', authRouter);

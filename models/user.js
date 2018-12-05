@@ -15,12 +15,13 @@ class User extends Model {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['username', 'password'],
+      required: ['email', 'password', 'name'],
 
       properties: {
         id: { type: 'integer' },
-        username: { type: 'string', minLength: 5 },
-        password: { type: 'string', minLength: 10 }
+        name: { type: 'string', minLength: 5 },
+        password: { type: 'string', minLength: 10 },
+        email: { type: 'string' }
       }
     };
   }
@@ -32,7 +33,8 @@ class User extends Model {
   serialize(){
     return {
       id: this.id,
-      username: this.username
+      name: this.name, 
+      email: this.email
     };
   }
 }

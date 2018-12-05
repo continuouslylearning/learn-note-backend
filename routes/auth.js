@@ -9,7 +9,7 @@ router.use(express.json());
 
 function createAuthToken (user){
   return jwt.sign({ user }, JWT_SECRET, {
-    subject: user.username,
+    subject: user.email,
     expiresIn: JWT_EXPIRY
   });
 }
