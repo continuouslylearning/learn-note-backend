@@ -1,5 +1,6 @@
 # learn-note-backend
 
+```
 .
 └── /auth
     └── POST
@@ -37,6 +38,8 @@
     │   └── /:id
     └── DELETE
         └── /:id
+```
+
 
 ```
 Users {
