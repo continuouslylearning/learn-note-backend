@@ -1,5 +1,7 @@
 # learn-note-backend
 
+## Endpoints 
+
 ```
 .
 └── /auth
@@ -40,6 +42,7 @@
         └── /:id
 ```
 
+## Data Model
 
 ```
 Users {
