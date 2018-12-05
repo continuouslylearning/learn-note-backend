@@ -8,8 +8,11 @@ const { dbConnect, dbGet } = require('./db');
 
 const { PORT, CLIENT_ORIGIN } = require('./config');
 
+const jwtAuth = require('./strategies/jwt');
+
 const usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
+const foldersRouter = require('./routes/folders');
 
 const app = express();
 
@@ -24,6 +27,8 @@ app.use(express.json());
 
 app.use('/api/users', usersRouter);
 app.use('/auth', authRouter);
+app.use('/api/folders', jwtAuth, foldersRouter);
+
 
 app.use((req, res, next) => {
   const err = new Error('Not found');

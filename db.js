@@ -20,6 +20,22 @@ function dbConnect(url = DB_URI) {
           table.string('password').notNullable();
         });
       }
+    })
+    .then(() => {
+      return knex.schema.hasTable('folders');
+    })
+    .then(exists => {
+      if(!exists){
+        return knex.schema.createTable('folders', table => {
+          table.increments('id').primary();
+          table.string('name').unique().notNullable();
+          table.unique(['userId', 'name']);
+          table.integer('userId').notNullable();
+          table.timestamp('createdAt').defaultTo(knex.fn.now());
+          table.timestamp('updatedAt').defaultTo(knex.fn.now());
+          table.foreign('userId').references('id').inTable('users');
+        });
+      }
     });
 }
 
