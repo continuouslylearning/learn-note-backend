@@ -5,5 +5,6 @@ module.exports = {
   JWT_EXPIRY: process.env.JWT_EXPIRY || '7d',
   PORT: process.env.PORT || 8080,
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:3000',
+  TEST_DB_URI: process.env.TEST_DB_URI,
   DB_URI: process.env.DB_URI || 'postgresql://dev:@localhost/learn-note'
 };

@@ -8,9 +8,8 @@ router.post('/', validateUser, (req, res, next) => {
 
   const { password, email, name } = req.body;
 
-  User.query().where({ email })
-    .then(users => {
-      const user = users[0];
+  User.query().where({ email }).first()
+    .then(user => {
       if(user){
         const err = new Error('User with this email already exists');
         err.status = 422;
