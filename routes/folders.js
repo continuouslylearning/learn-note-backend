@@ -7,7 +7,8 @@ const router = express.Router();
 router.get('/', (req, res, next) => {
   const userId = req.user.id;
 
-  Folder.query().where({ userId })
+  Folder.query()
+    .where({ userId })
     .then(folders => {
       return res.json(folders);
     })
@@ -36,7 +37,9 @@ router.post('/', validateFolder, (req, res, next) => {
   const userId = req.user.id;
   const { name } = req.body;
 
-  Folder.query().where({ userId, name }).first()
+  Folder.query()
+    .where({ userId, name })
+    .first()
     .then(folder => {
       if(folder){
         const err = new Error('Folder with this name already exists');

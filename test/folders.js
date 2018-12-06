@@ -27,7 +27,7 @@ describe('FOLDERS API', function(){
   let knex;
 
   before(function(){
-    this.timeout(10000);
+    this.timeout(4000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
@@ -40,8 +40,9 @@ describe('FOLDERS API', function(){
       .query()
       .insert(usersData)
       .returning('*')
-      .then(users => {
-        user = users[0];
+      .first()
+      .then(_user=> {
+        user = _user;
         userId = user.id;
         token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
         return Folder
