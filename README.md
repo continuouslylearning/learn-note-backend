@@ -82,6 +82,7 @@ Resources {
   parent: foreign_key<topics>
   title: string
   uri: string
+  completed: bool
   last_opened: date <- managed by the front-end sending a PUT request to the resource
 }
 ```
