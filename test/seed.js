@@ -4,12 +4,12 @@ const usersData = [
 ];
 
 const foldersData = [
-  { id: 3000, name: 'Python', userId: 1000 },
-  { id: 3001, name: 'Javascript', userId: 1000 },
-  { id: 3002, name: 'Java', userId: 1000 },
-  { id: 3003, name: 'Algorithms', userId: 1000 },
-  { id: 3004, name: 'Java', userId: 2000 },
-  { id: 3005, name: 'Algorithms', userId: 2000 },
+  { id: 3000, title: 'Python', userId: 1000 },
+  { id: 3001, title: 'Javascript', userId: 1000 },
+  { id: 3002, title: 'Java', userId: 1000 },
+  { id: 3003, title: 'Algorithms', userId: 1000 },
+  { id: 3004, title: 'Java', userId: 2000 },
+  { id: 3005, title: 'Algorithms', userId: 2000 },
 ];
 
 const topicsData = [

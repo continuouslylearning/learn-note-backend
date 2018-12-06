@@ -1,21 +1,21 @@
 function validateFolder(req, res, next){
 
-  const { name } = req.body;
+  const { title } = req.body;
 
-  if(!('name' in req.body)){
-    const err = new Error('Folder name is required');
+  if(!('title' in req.body)){
+    const err = new Error('Folder title is required');
     err.status = 400;
     return next(err);
   }
 
-  if(typeof name !== 'string'){
-    const err = new Error('Folder name must be a string');
+  if(typeof title !== 'string'){
+    const err = new Error('Folder title must be a string');
     err.status = 422;
     return next(err);
   }
 
-  if(!name.trim()){
-    const err = new Error('Folder name is required');
+  if(!title.trim()){
+    const err = new Error('Folder title is required');
     err.status = 422;
     return next(err);
   }

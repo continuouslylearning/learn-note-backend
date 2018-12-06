@@ -30,8 +30,8 @@ function createTables(knex){
       if(exists) return Promise.resolve();
       return knex.schema.createTable('folders', table => {
         table.increments('id').primary();
-        table.string('name').notNullable();
-        table.unique(['userId', 'name']);
+        table.string('title').notNullable();
+        table.unique(['userId', 'title']);
         table.integer('userId').notNullable();
         table.timestamp('createdAt').defaultTo(knex.fn.now());
         table.timestamp('updatedAt').defaultTo(knex.fn.now());

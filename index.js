@@ -40,10 +40,7 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) => {
   if (err.status) {
-    const errBody = { 
-      message: err.message 
-    };
-    return res.status(err.status).json(errBody);
+    return res.status(err.status).json({ message: err.message });
   } else {
     console.error(err);
     res.status(500).json({ message: 'Internal Server Error' });
