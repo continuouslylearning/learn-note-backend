@@ -23,7 +23,7 @@ function validateUser(req, res, next){
 
   const fieldSizes = {
     password: {
-      min: 10,
+      min: 8,
       max: 72
     }
   };
