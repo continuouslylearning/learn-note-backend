@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { Model } = require('objection');
-const { dbConnect, dbGet } = require('./db');
+const { dbConnect, dbGet, createTables } = require('./db');
 
 const { PORT, CLIENT_ORIGIN } = require('./config');
 
@@ -64,6 +64,7 @@ if (require.main === module) {
   runServer();
   dbConnect();
   const knex = dbGet();
+  createTables(knex);
   Model.knex(knex);
 }
 

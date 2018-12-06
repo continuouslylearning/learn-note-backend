@@ -9,8 +9,10 @@ function dbConnect(url = DB_URI) {
     client: 'pg',
     connection: url
   });
+}
 
-  knex.schema.hasTable('users')
+function createTables(knex){
+  return knex.schema.hasTable('users')
     .then(exists => {
       if(!exists){
         return knex.schema.createTable('users', table => {
@@ -28,7 +30,7 @@ function dbConnect(url = DB_URI) {
       if(!exists){
         return knex.schema.createTable('folders', table => {
           table.increments('id').primary();
-          table.string('name').unique().notNullable();
+          table.string('name').notNullable();
           table.unique(['userId', 'name']);
           table.integer('userId').notNullable();
           table.timestamp('createdAt').defaultTo(knex.fn.now());
@@ -37,6 +39,12 @@ function dbConnect(url = DB_URI) {
         });
       }
     });
+}
+
+function dropTables(knex){
+  return knex.schema
+    .dropTableIfExists('folders')
+    .dropTableIfExists('users');
 }
 
 function dbDisconnect() {
@@ -50,5 +58,7 @@ function dbGet() {
 module.exports = {
   dbConnect,
   dbDisconnect,
-  dbGet
+  dbGet,
+  createTables, 
+  dropTables
 };
