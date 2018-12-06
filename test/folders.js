@@ -20,14 +20,14 @@ const Folder = require('../models/folder');
 describe('FOLDERS API', function(){
 
   const FOLDERS_ENDPOINT = '/api/folders';
-  const FOLDER_PROPERTIES = ['id', 'name', 'userId', 'createdAt', 'updatedAt'];
+  const FOLDER_PROPERTIES = ['id', 'title', 'userId', 'createdAt', 'updatedAt'];
   let user;
   let userId;
   let token;
   let knex;
 
   before(function(){
-    this.timeout(10000);
+    this.timeout(5000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
@@ -40,8 +40,9 @@ describe('FOLDERS API', function(){
       .query()
       .insert(usersData)
       .returning('*')
-      .then(users => {
-        user = users[0];
+      .first()
+      .then(_user=> {
+        user = _user;
         userId = user.id;
         token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
         return Folder
@@ -88,7 +89,7 @@ describe('FOLDERS API', function(){
           expect(dbFolders.length).to.equal(resFolders.length);
           dbFolders.forEach((dbFolder, index) => {
             expect(dbFolder.id).to.equal(resFolders[index].id);
-            expect(dbFolder.name).to.equal(resFolders[index].name);
+            expect(dbFolder.title).to.equal(resFolders[index].title);
             expect(new Date(dbFolder.createdAt)).to.deep.equal(new Date(resFolders[index].createdAt));
             expect(new Date(dbFolder.updatedAt)).to.deep.equal(new Date(resFolders[index].updatedAt));
           });
@@ -106,7 +107,7 @@ describe('FOLDERS API', function(){
 
   describe('POST /folders', function(){
     const newFolder = {
-      name: 'React/Redux',
+      title: 'React/Redux',
       userId
     };
 
@@ -121,7 +122,7 @@ describe('FOLDERS API', function(){
           expect(res).to.have.status(201);
           resFolder = res.body;
           expect(resFolder).to.have.keys(FOLDER_PROPERTIES);
-          expect(resFolder.name).to.equal(newFolder.name);
+          expect(resFolder.title).to.equal(newFolder.title);
           const folderId = res.body.id;
           return Folder
             .query()
@@ -129,7 +130,7 @@ describe('FOLDERS API', function(){
             .first();
         })
         .then(dbFolder => {
-          expect(dbFolder.name).to.equal(newFolder.name);
+          expect(dbFolder.title).to.equal(newFolder.title);
           expect(new Date(dbFolder.createdAt)).to.deep.equal(new Date(resFolder.createdAt));
           expect(new Date(dbFolder.updatedAt)).to.deep.equal(new Date(resFolder.updatedAt));
         });
@@ -147,7 +148,7 @@ describe('FOLDERS API', function(){
 
   describe('PUT /folder/:id', function(){
     const updatedFolder = {
-      name: 'React/Redux',
+      title: 'React/Redux',
       userId
     };
 
@@ -170,14 +171,14 @@ describe('FOLDERS API', function(){
           resFolder = res.body;
           expect(res).to.have.status(201);
           expect(res.body).to.have.keys(FOLDER_PROPERTIES);
-          expect(resFolder.name).to.equal(updatedFolder.name);
+          expect(resFolder.title).to.equal(updatedFolder.title);
           return Folder
             .query()
             .where({ userId, id: folderId })
             .first();
         })
         .then(dbFolder => {
-          expect(dbFolder.name).to.equal(updatedFolder.name);
+          expect(dbFolder.title).to.equal(updatedFolder.title);
           expect(new Date(dbFolder.createdAt)).to.deep.equal(new Date(resFolder.createdAt));
           expect(new Date(dbFolder.updatedAt)).to.deep.equal(new Date(resFolder.updatedAt));
         });
@@ -203,7 +204,7 @@ describe('FOLDERS API', function(){
     it('should return 404 when params id does not exist', function(){
       const id = Math.floor(Math.random()*1000000);
       const updatedFolder = {
-        name: 'React/Redux',
+        title: 'React/Redux',
         userId
       };
  

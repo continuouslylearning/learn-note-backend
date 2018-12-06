@@ -7,7 +7,8 @@ const router = express.Router();
 router.get('/', (req, res, next) => {
   const userId = req.user.id;
 
-  Folder.query().where({ userId })
+  Folder.query()
+    .where({ userId })
     .then(folders => {
       return res.json(folders);
     })
@@ -17,10 +18,10 @@ router.get('/', (req, res, next) => {
 router.put('/:id', validateFolder, (req, res, next) => {
   const folderId = req.params.id;
   const userId = req.user.id;
-  const { name } = req.body;
+  const { title } = req.body;
 
   Folder.query()
-    .update({ name })
+    .update({ title })
     .where({ userId, id: folderId })
     .returning('*')
     .first()
@@ -34,17 +35,19 @@ router.put('/:id', validateFolder, (req, res, next) => {
 
 router.post('/', validateFolder, (req, res, next) => {
   const userId = req.user.id;
-  const { name } = req.body;
+  const { title } = req.body;
 
-  Folder.query().where({ userId, name }).first()
+  Folder.query()
+    .where({ userId, title })
+    .first()
     .then(folder => {
       if(folder){
-        const err = new Error('Folder with this name already exists');
+        const err = new Error('Folder with this title already exists');
         err.status = 422;
         return Promise.reject(err);
       }
       return Folder.query()
-        .insert({ name, userId })
+        .insert({ title, userId })
         .returning('*');
     })
     .then(folder => {
@@ -64,7 +67,7 @@ router.delete('/:id', (req, res, next) => {
     .first()
     .then(folder => {
       if(!folder) return Promise.reject();
-      return res.status(204).json(folder);
+      return res.sendStatus(204);
     })
     .catch(next);
 });

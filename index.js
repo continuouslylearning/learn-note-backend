@@ -13,6 +13,7 @@ const jwtAuth = require('./strategies/jwt');
 const usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
 const foldersRouter = require('./routes/folders');
+const topicsRouter = require('./routes/topics');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use(express.json());
 app.use('/api/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/api/folders', jwtAuth, foldersRouter);
+app.use('/api/topics', jwtAuth, topicsRouter);
 
 
 app.use((req, res, next) => {
@@ -38,11 +40,7 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) => {
   if (err.status) {
-    const errBody = { 
-      ...err,
-      message: err.message 
-    };
-    return res.status(err.status).json(errBody);
+    return res.status(err.status).json({ message: err.message });
   } else {
     console.error(err);
     res.status(500).json({ message: 'Internal Server Error' });
