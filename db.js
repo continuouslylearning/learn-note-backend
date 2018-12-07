@@ -65,10 +65,12 @@ function createTables(knex){
       if(exists) return Promise.resolve();
       return knex.schema.createTable('resources', table => {
         table.increments('id').primary();
+        table.integer('userId').notNullable();
+        table.foreign('userId').references('id').inTable('users').onDelete('CASCADE');
         table.integer('parent').notNullable();
-        table.foreign('parent').references('id').inTable('topics');
+        table.foreign('parent').references('id').inTable('topics').onDelete('CASCADE');
         table.string('title').notNullable();
-        table.string('uri');
+        table.string('uri').notNullable();
         table.boolean('completed').notNullable().defaultTo(false);
         table.timestamp('lastOpened').notNullable().defaultTo(knex.fn.now());
       });

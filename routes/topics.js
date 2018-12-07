@@ -16,7 +16,6 @@ router.get('/', (req, res, next) => {
     .catch(next);
 });
 
-
 router.put('/:id', validateTopic, (req, res, next) => {
   const userId = req.user.id;
   const topicId = req.params.id;
@@ -54,7 +53,7 @@ router.post('/', validateTopic, (req, res, next) => {
     .first()
     .then(topic => {
       if(topic){
-        const err = new Error('Topic with this name already exists');
+        const err = new Error('Topic with this title already exists');
         err.status = 422;
         return Promise.reject(err);
       }
