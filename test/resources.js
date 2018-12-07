@@ -196,7 +196,7 @@ describe('RESOURCES API', function(){
           expect(res).to.have.status(401);
         });
     });
-  });6t
+  });
 
   describe('POST /api/resources', function(){
     const newResource = {
