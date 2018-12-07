@@ -32,10 +32,10 @@
 │       └── /:id
 └── /resources
     ├── GET
-    │   ├── / <- query params: { limit: int, orderby: last_opened }
-    │   └── /:topicId 
+    │   ├── / <- query params: { limit: int, orderby: lastOpened }
+    │   └── /:topicId <- this is technically the `parent` field
     ├── POST
-    │   └── / <- MUST specify topicId in body
+    │   └── / <- MUST specify parent in body
     ├── PUT
     │   └── /:id
     └── DELETE
@@ -54,35 +54,29 @@ Users {
 
 Folders {
   id: serial
-  user_id: foreign_key<users>
+  userId: userId
   title: string
-  created_at: date
-  updated_at: date
-}
-
-Folders-Topics {
-  folder-id: foreign_key<folders>
-  topic-id: foreign_key<topics>
+  createdAt: date
+  updatedAt: date
 }
 
 Topics {
   id: serial
-  user_id: foreign_key<users>
+  userId: userId
   title: string
-  parent: foreign_key<folders> || null
-  last_opened: date
+  parent: folderId || null <- returns { id, title } at endpoint
   notebook: JSONB <- crazy object from QuillJS
   resourceOrder: JSONB <- [<resourceIds>]
-  created_at: date
-  updated_at: date
+  createdAt: date
+  updatedAt: date
 }
 
 Resources {
-  id: serial,
-  parent: foreign_key<topics>
+  id: serial
+  parent: topicId
   title: string
   uri: string
   completed: bool
-  last_opened: date <- managed by the front-end sending a PUT request to the resource
+  lastOpened: date <- managed by the front-end sending a PUT request to the resource
 }
 ```
