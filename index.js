@@ -14,6 +14,7 @@ const usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
 const foldersRouter = require('./routes/folders');
 const topicsRouter = require('./routes/topics');
+const resourcesRouter = require('./routes/resources');
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/api/folders', jwtAuth, foldersRouter);
 app.use('/api/topics', jwtAuth, topicsRouter);
+app.use('/api/resources', jwtAuth, resourcesRouter);
 
 
 app.use((req, res, next) => {
