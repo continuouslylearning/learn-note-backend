@@ -1,4 +1,5 @@
 const { dbConnect, createTables, dbGet, dbDisconnect, dropTables } = require('./db');
+
 const Model = require('objection').Model;
 const User = require('./models/user');
 const Folder = require('./models/folder');
@@ -10,7 +11,14 @@ dbConnect();
 const knex = dbGet();
 Model.knex(knex);
 
-return dropTables(knex)
+Promise.all(usersData.map(user => User.hashPassword(user.password)))
+  .then(hashes => {
+    usersData.forEach((user, index) => {
+      user.password = hashes[index];
+    });
+    return;
+  })
+  .then(() => dropTables(knex))
   .then(() => createTables(knex))
   .then(() => {
     return User
