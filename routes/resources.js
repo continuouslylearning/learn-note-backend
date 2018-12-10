@@ -65,6 +65,7 @@ router.get('/:id', (req, res, next) => {
           title: resource.topicTitle
         };
       });
+      resources.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
       return res.json(resources);
     })
     .catch(next);
