@@ -267,8 +267,7 @@ describe('RESOURCES API', function(){
   });
 
 
-
-  describe('DELETE /api/resources/:id', function(){
+  describe.only('DELETE /api/resources/:id', function(){
 
     it('should remove the resources from the table', function(){
       let resourceId;
@@ -284,9 +283,9 @@ describe('RESOURCES API', function(){
         })
         .then(res => {
           expect(res).to.have.status(204);
-          return Topic
+          return Resource
             .query()
-            .where({ id: resourceId, userId })
+            .where({ userId, id: resourceId })
             .first();
         })
         .then(resource => {
