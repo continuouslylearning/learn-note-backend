@@ -129,6 +129,7 @@ router.delete('/:id', (req, res, next) => {
 
   Resource
     .query()
+    .delete()
     .where({ userId, id: resourceId })
     .returning('*')
     .first()
