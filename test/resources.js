@@ -104,6 +104,7 @@ describe('RESOURCES API', function(){
             .where({ userId });
         })
         .then(dbResources => {
+          dbResources.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
           expect(dbResources.length).to.equal(resResources.length);
           dbResources.forEach((dbResource, index) => {
             const resResource = resResources[index];
@@ -137,6 +138,7 @@ describe('RESOURCES API', function(){
             .orderBy('lastOpened');
         })
         .then(dbResources => {
+          dbResources.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
           expect(dbResources.length).to.equal(resResources.length);
           dbResources.forEach((dbResource, index) => {
             const resResource = resResources[index];
@@ -158,23 +160,31 @@ describe('RESOURCES API', function(){
     });
   });
 
-  describe('GET /api/resources', function(){
+  describe('GET /api/resources/:id', function(){
 
     it('should return the correct resources', function(){
 
       let resResources;
-      return chai.request(app)
-        .get(RESOURCES_ENDPOINT)
-        .set('Authorization', `Bearer ${token}`)
+      let topicId;
+      return Topic
+        .query()
+        .where({ userId })
+        .first()
+        .then(topic => {
+          topicId = topic.id;
+          return chai.request(app)
+            .get(`${RESOURCES_ENDPOINT}/${topicId}`)
+            .set('Authorization', `Bearer ${token}`);
+        })
         .then(res => {
-          resResources = res.body;
           expect(res).to.have.status(200);
+          resResources = res.body;
           resResources.forEach(resResource => {
             expect(resResource).to.contain.keys(RESOURCE_PROPERTIES.filter(property => property !== 'userId'));
           });
           return Resource
             .query()
-            .where({ userId });
+            .where({ userId, parent: topicId });
         })
         .then(dbResources => {
           expect(dbResources.length).to.equal(resResources.length);
@@ -196,7 +206,19 @@ describe('RESOURCES API', function(){
           expect(res).to.have.status(401);
         });
     });
+
+    it('should return 404 when the topic id is non-existent', function(){
+      const topicId = Math.floor(Math.random()*100000);
+
+      return chai.request(app)
+        .get(`${RESOURCES_ENDPOINT}/${topicId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .then(res => {
+          expect(res).to.have.status(404);
+        });
+    });
   });
+
 
   describe('POST /api/resources', function(){
     const newResource = {

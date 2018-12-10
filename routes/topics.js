@@ -1,5 +1,6 @@
 const express = require('express');
 const Topic = require('../models/topic');
+const Folder = require('../models/folder');
 const validateTopic = require('./validation/topic');
 
 const router = express.Router();
@@ -8,9 +9,29 @@ router.get('/', (req, res, next) => {
 
   const userId = req.user.id;
   
-  return Topic.query()
-    .where({ userId })
+  return Folder
+    .query()
+    .select(
+      'topics.id as id', 
+      'topics.userId',
+      'topics.parent as parent', 
+      'topics.title',
+      'notebook', 
+      'resourceOrder', 
+      'topics.createdAt',
+      'topics.updatedAt',
+      'folders.title as folderTitle'
+    )
+    .join('topics', 'folders.id', 'topics.parent')
+    .where({ 'topics.userId': userId })
     .then(topics => {
+      topics.forEach(topic => {
+        topic.parent = {
+          id: topic.parent,
+          title: topic.folderTitle,
+        };
+        delete topic.folderTitle;
+      });
       return res.json(topics);
     })
     .catch(next);
@@ -28,7 +49,8 @@ router.put('/:id', validateTopic, (req, res, next) => {
     }
   });
 
-  return Topic.query()
+  return Topic
+    .query()
     .update(updatedTopic)
     .where({ userId, id: topicId })
     .returning('*')
