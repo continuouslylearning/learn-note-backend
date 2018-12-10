@@ -267,7 +267,7 @@ describe('RESOURCES API', function(){
   });
 
 
-  describe.only('DELETE /api/resources/:id', function(){
+  describe('DELETE /api/resources/:id', function(){
 
     it('should remove the resources from the table', function(){
       let resourceId;
