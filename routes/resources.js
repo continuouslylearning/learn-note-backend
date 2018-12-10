@@ -34,12 +34,13 @@ router.get('/', (req, res, next) => {
           id: result.parent,
           title: result.topicTitle
         };
+        delete result.topicTitle;
       });
+      results.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
       return res.json(results);
     })
     .catch(next);
 });
-
 
 router.get('/:id', (req, res, next) => {
   const userId = req.user.id;
@@ -47,23 +48,32 @@ router.get('/:id', (req, res, next) => {
 
   Topic
     .query()
-    .select(
-      'resources.id as id', 
-      'resources.parent as parent', 
-      'resources.title as title', 
-      'uri', 
-      'completed', 
-      'resources.lastOpened as lastOpened',
-      'topics.title as topicTitle'
-    )
-    .join('resources', 'topics.id', 'resources.parent')
-    .where({ 'topics.userId': userId, 'topics.id': topicId })
+    .where({ userId, id: topicId })
+    .first()
+    .then(topic => {
+      if(!topic) return Promise.reject();
+
+      return Topic
+        .query()
+        .select(
+          'resources.id as id', 
+          'resources.parent as parent', 
+          'resources.title as title', 
+          'uri', 
+          'completed', 
+          'resources.lastOpened as lastOpened',
+          'topics.title as topicTitle'
+        )
+        .join('resources', 'topics.id', 'resources.parent')
+        .where({ 'topics.userId': userId, 'topics.id': topicId });
+    })
     .then(resources => {
       resources.forEach(resource => {
         resource.parent = {
           id: resource.parent,
           title: resource.topicTitle
         };
+        delete resource.topicTitle;
       });
       resources.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
       return res.json(resources);
