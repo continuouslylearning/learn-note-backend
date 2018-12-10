@@ -22,7 +22,7 @@ router.get('/', (req, res, next) => {
       'topics.updatedAt',
       'folders.title as folderTitle'
     )
-    .join('topics', 'folders.id', 'topics.parent')
+    .rightJoin('topics', 'folders.id', 'topics.parent')
     .where({ 'topics.userId': userId })
     .then(topics => {
       topics.forEach(topic => {
