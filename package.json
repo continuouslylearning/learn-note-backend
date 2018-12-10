@@ -6,7 +6,8 @@
 	"scripts": {
 		"start": "node index.js",
 		"heroku": "node index.js",
-		"test": "mocha"
+		"test": "mocha",
+		"seed": "node seed.js"
 	},
 	"repository": {
 		"type": "git",
