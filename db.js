@@ -53,7 +53,7 @@ function createTables(knex){
         table.foreign('parent').references('id').inTable('folders').onDelete('SET NULL');
         table.jsonb('notebook');
         table.jsonb('resourceOrder');
-        table.timestamp('lastOpened').defaultTo(knex.fn.now());
+        // table.timestamp('lastOpened').defaultTo(knex.fn.now());
         table.timestamp('createdAt').defaultTo(knex.fn.now());
         table.timestamp('updatedAt').defaultTo(knex.fn.now());
       });

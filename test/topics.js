@@ -22,7 +22,7 @@ const Topic = require('../models/topic');
 describe('TOPICS API', function(){
 
   const TOPICS_ENDPOINT = '/api/topics';
-  const TOPIC_PROPERTIES = ['id', 'title', 'parent', 'userId', 'notebook', 'resourceOrder', 'lastOpened', 'createdAt', 'updatedAt'];
+  const TOPIC_PROPERTIES = ['id', 'title', 'parent', 'userId', 'notebook', 'resourceOrder', 'createdAt', 'updatedAt'];
   let user;
   let userId;
   let token;
@@ -102,9 +102,8 @@ describe('TOPICS API', function(){
           dbTopics.forEach((dbTopic, index) => {
             const resTopic = resTopics[index];
             expect(dbTopic.title).to.equal(resTopic.title);
-            expect(dbTopic.parent).to.equal(resTopic.parent);
+            expect(dbTopic.parent).to.equal(resTopic.parent.id);
             expect(dbTopic.notebook).to.equal(resTopic.notebook);
-            expect(new Date(dbTopic.lastOpened)).to.deep.equal(new Date(resTopic.lastOpened));
             expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
             expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
           });
@@ -149,7 +148,6 @@ describe('TOPICS API', function(){
           expect(dbTopic.title).to.equal(resTopic.title);
           expect(dbTopic.parent).to.equal(resTopic.parent);
           expect(dbTopic.notebook).to.equal(resTopic.notebook);
-          expect(new Date(dbTopic.lastOpened)).to.deep.equal(new Date(resTopic.lastOpened));
           expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
           expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
         });
@@ -180,7 +178,6 @@ describe('TOPICS API', function(){
           expect(dbTopic.title).to.equal(resTopic.title);
           expect(dbTopic.parent).to.equal(resTopic.parent);
           expect(dbTopic.notebook).to.equal(resTopic.notebook);
-          expect(new Date(dbTopic.lastOpened)).to.deep.equal(new Date(resTopic.lastOpened));
           expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
           expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
         });
@@ -218,7 +215,6 @@ describe('TOPICS API', function(){
     const updatedTopic = {
       parent: 3001,
       title: 'Angular',
-      lastOpened: new Date().toISOString(),
       notebook: '[{ "insert": "value", "insert": "value2"}]'
     };
 
@@ -243,7 +239,6 @@ describe('TOPICS API', function(){
           expect(resTopic).to.have.keys(TOPIC_PROPERTIES);
           expect(resTopic.title).to.equal(updatedTopic.title);
           expect(resTopic.parent).to.equal(updatedTopic.parent);
-          expect(resTopic.lastOpened).to.equal(updatedTopic.lastOpened);
           return Topic
             .query()
             .where({ userId, id: topicId })
@@ -253,7 +248,6 @@ describe('TOPICS API', function(){
           expect(dbTopic.title).to.equal(updatedTopic.title);
           expect(dbTopic.parent).to.equal(updatedTopic.parent);
           expect(dbTopic.notebook).to.deep.equal(resTopic.notebook);
-          expect(new Date(dbTopic.lastOpened)).to.deep.equal(new Date(updatedTopic.lastOpened));
           expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
           expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
         });
