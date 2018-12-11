@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/', (req, res, next) => {
 
-  const uri = req.body.uri;
+  const uri = req.query.uri;
 
   if(!uri){
     const err = new Error('Uri is required');
