@@ -24,21 +24,21 @@ const topicsData = [
 ];
 
 const resourcesData = [
-  { parent: 4000, title: 'Resource #1', uri: 'uri #1', completed: false, userId: 1000 },
-  { parent: 4000, title: 'Resource #2', uri: 'uri #2', completed: false, userId: 1000 },
-  { parent: 4001, title: 'Resource #3', uri: 'uri #3', completed: false, userId: 1000 },
-  { parent: 4001, title: 'Resource #4', uri: 'uri #4', completed: false, userId: 1000 },
-  { parent: 4002, title: 'Resource #5', uri: 'uri #5', completed: false, userId: 1000 },
-  { parent: 4002, title: 'Resource #6', uri: 'uri #6', completed: false, userId: 1000 },
-  { parent: 4003, title: 'Resource #7', uri: 'uri #7', completed: false, userId: 1000 },
-  { parent: 4003, title: 'Resource #8', uri: 'uri #8', completed: false, userId: 1000 },
-  { parent: 4004, title: 'Resource #9', uri: 'uri #9', completed: false, userId: 1000 },
-  { parent: 4004, title: 'Resource #10', uri: 'uri #10', completed: false, userId: 1000 },
-  { parent: 4005, title: 'Resource #11', uri: 'uri #11', completed: false, userId: 1000 },
-  { parent: 4005, title: 'Resource #12', uri: 'uri #12', completed: false, userId: 1000 },
-  { parent: 4001, title: 'Resource #13', uri: 'uri #13', completed: false, userId: 1000 },
-  { parent: 4002, title: 'Resource #14', uri: 'uri #14', completed: false, userId: 1000 },
-  { parent: 4003, title: 'Resource #15', uri: 'uri #15', completed: false, userId: 1000 }
+  { parent: 4000, title: 'Resource #1', uri: 'uri #1', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4000, title: 'Resource #2', uri: 'uri #2', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4001, title: 'Resource #3', uri: 'uri #3', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4001, title: 'Resource #4', uri: 'uri #4', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4002, title: 'Resource #5', uri: 'uri #5', completed: false, userId: 1000, type: 'other' },
+  { parent: 4002, title: 'Resource #6', uri: 'uri #6', completed: false, userId: 1000, type: 'other' },
+  { parent: 4003, title: 'Resource #7', uri: 'uri #7', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4003, title: 'Resource #8', uri: 'uri #8', completed: false, userId: 1000, type: 'other' },
+  { parent: 4004, title: 'Resource #9', uri: 'uri #9', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4004, title: 'Resource #10', uri: 'uri #10', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4005, title: 'Resource #11', uri: 'uri #11', completed: false, userId: 1000, type: 'other' },
+  { parent: 4005, title: 'Resource #12', uri: 'uri #12', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4001, title: 'Resource #13', uri: 'uri #13', completed: false, userId: 1000, type: 'other' },
+  { parent: 4002, title: 'Resource #14', uri: 'uri #14', completed: false, userId: 1000, type: 'youtube' },
+  { parent: 4003, title: 'Resource #15', uri: 'uri #15', completed: false, userId: 1000, type: 'other' }
 ];
 
 module.exports = {

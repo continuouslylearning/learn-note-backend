@@ -15,6 +15,8 @@ const authRouter = require('./routes/auth');
 const foldersRouter = require('./routes/folders');
 const topicsRouter = require('./routes/topics');
 const resourcesRouter = require('./routes/resources');
+const metaRouter = require('./routes/meta');
+
 
 const app = express();
 
@@ -32,7 +34,7 @@ app.use('/auth', authRouter);
 app.use('/api/folders', jwtAuth, foldersRouter);
 app.use('/api/topics', jwtAuth, topicsRouter);
 app.use('/api/resources', jwtAuth, resourcesRouter);
-
+app.use('/api/metadata', metaRouter);
 
 app.use((req, res, next) => {
   const err = new Error('Not found');

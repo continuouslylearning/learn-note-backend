@@ -16,9 +16,8 @@ Promise.all(usersData.map(user => User.hashPassword(user.password)))
     usersData.forEach((user, index) => {
       user.password = hashes[index];
     });
-    return;
+    return dropTables(knex);
   })
-  .then(() => dropTables(knex))
   .then(() => createTables(knex))
   .then(() => {
     return User

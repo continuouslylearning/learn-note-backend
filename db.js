@@ -15,7 +15,7 @@ function createTables(knex){
 
   return knex.schema.hasTable('users')
     .then(exists => {
-      if(exists) return Promise.resolve();
+      if(exists) return;
       return knex.schema.createTable('users', table => {
         table.increments('id').primary();
         table.string('email').unique().notNullable();
@@ -27,7 +27,7 @@ function createTables(knex){
       return knex.schema.hasTable('folders');
     })
     .then(exists => {
-      if(exists) return Promise.resolve();
+      if(exists) return;
       return knex.schema.createTable('folders', table => {
         table.increments('id').primary();
         table.string('title').notNullable();
@@ -42,7 +42,7 @@ function createTables(knex){
       return knex.schema.hasTable('topics');
     })
     .then(exists => {
-      if(exists) return Promise.resolve();
+      if(exists) return;
       return knex.schema.createTable('topics', table => {
         table.increments('id').primary();
         table.integer('userId').notNullable();
@@ -53,7 +53,6 @@ function createTables(knex){
         table.foreign('parent').references('id').inTable('folders').onDelete('SET NULL');
         table.jsonb('notebook');
         table.jsonb('resourceOrder');
-        // table.timestamp('lastOpened').defaultTo(knex.fn.now());
         table.timestamp('createdAt').defaultTo(knex.fn.now());
         table.timestamp('updatedAt').defaultTo(knex.fn.now());
       });
@@ -62,7 +61,7 @@ function createTables(knex){
       return knex.schema.hasTable('resources');
     })
     .then(exists => {
-      if(exists) return Promise.resolve();
+      if(exists) return;
       return knex.schema.createTable('resources', table => {
         table.increments('id').primary();
         table.integer('userId').notNullable();
@@ -71,6 +70,7 @@ function createTables(knex){
         table.foreign('parent').references('id').inTable('topics').onDelete('CASCADE');
         table.string('title').notNullable();
         table.string('uri').notNullable();
+        table.enum('type', ['youtube', 'other']).notNullable();
         table.boolean('completed').notNullable().defaultTo(false);
         table.timestamp('lastOpened').notNullable().defaultTo(knex.fn.now());
       });
