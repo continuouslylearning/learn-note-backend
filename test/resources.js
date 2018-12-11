@@ -23,7 +23,7 @@ const Resource = require('../models/resource');
 describe('RESOURCES API', function(){
 
   const RESOURCES_ENDPOINT = '/api/resources';
-  const RESOURCE_PROPERTIES = ['id', 'title', 'parent', 'uri', 'completed', 'lastOpened', 'userId'];
+  const RESOURCE_PROPERTIES = ['id', 'title', 'parent', 'uri', 'type', 'completed', 'lastOpened', 'userId'];
   let user;
   let userId;
   let token;
@@ -110,6 +110,7 @@ describe('RESOURCES API', function(){
             const resResource = resResources[index];
             expect(dbResource.title).to.equal(resResource.title);
             expect(dbResource.parent).to.equal(resResource.parent.id);
+            expect(dbResource.type).to.equal(resResource.type);
             expect(dbResource.uri).to.equal(resResource.uri);
             expect(dbResource.completed).to.equal(resResource.completed);
             expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
@@ -144,6 +145,7 @@ describe('RESOURCES API', function(){
             const resResource = resResources[index];
             expect(dbResource.title).to.equal(resResource.title);
             expect(dbResource.parent).to.equal(resResource.parent.id);
+            expect(dbResource.type).to.equal(resResource.type);
             expect(dbResource.uri).to.equal(resResource.uri);
             expect(dbResource.completed).to.equal(resResource.completed);
             expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
@@ -192,6 +194,7 @@ describe('RESOURCES API', function(){
             const resResource = resResources[index];
             expect(dbResource.title).to.equal(resResource.title);
             expect(dbResource.parent).to.equal(resResource.parent.id);
+            expect(dbResource.type).to.equal(resResource.type);
             expect(dbResource.uri).to.equal(resResource.uri);
             expect(dbResource.completed).to.equal(resResource.completed);
             expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
@@ -224,8 +227,9 @@ describe('RESOURCES API', function(){
     const newResource = {
       title: 'Resource title',
       parent: 4000,
-      uri: 'http://youtube.com/resource',
-      userId
+      uri: 'https://www.youtube.com/watch?v=vEROU2XtPR8',
+      userId,
+      type: 'youtube'
     };
 
     it('should insert topic into table when valid parent is given', function(){
@@ -243,7 +247,8 @@ describe('RESOURCES API', function(){
           expect(resResource).to.have.keys(RESOURCE_PROPERTIES);
           expect(resResource.parent).to.equal(newResource.parent);
           expect(resResource.title).to.equal(newResource.title);
-          expect(resResource.uri).to.equal(newResource.uri);
+          expect(resResource.type).to.equal(resResource.type);
+          expect(resResource.uri).to.equal(newResource.type === 'youtube' ? newResource.uri.split('v=')[1].slice(0, 11) : newResource.uri);
           return Resource
             .query()
             .where({ id: resourceId })
@@ -252,7 +257,8 @@ describe('RESOURCES API', function(){
         .then(dbResource => {
           expect(dbResource.title).to.equal(resResource.title);
           expect(dbResource.parent).to.equal(resResource.parent);
-          expect(dbResource.uri).to.equal(newResource.uri);
+          expect(dbResource.type).to.equal(resResource.type);
+          expect(dbResource.uri).to.equal(newResource.type === 'youtube' ? newResource.uri.split('v=')[1].slice(0, 11) : newResource.uri);
           expect(dbResource.completed).to.equal(resResource.completed);
           expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
         });
@@ -270,12 +276,12 @@ describe('RESOURCES API', function(){
     });
 
     it('should return 422 when the parent id is invalid', function(){
-
       const parent = Math.floor(Math.max(1000000));
       const resource = {
         title: 'Resource title',
         parent,
-        uri: 'http://youtube.com/resource'
+        uri: 'https://www.youtube.com/watch?v=vEROU2XtPR8',
+        type: 'youtube'
       };
 
       return chai.request(app)
@@ -342,6 +348,5 @@ describe('RESOURCES API', function(){
         });
     });
   });
-
 
 });
