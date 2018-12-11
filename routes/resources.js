@@ -15,6 +15,7 @@ router.get('/', (req, res, next) => {
       'resources.id as id', 
       'resources.parent as parent', 
       'resources.title as title', 
+      'type',
       'uri', 
       'completed', 
       'resources.lastOpened as lastOpened',
@@ -59,10 +60,11 @@ router.get('/:id', (req, res, next) => {
           'resources.id as id', 
           'resources.parent as parent', 
           'resources.title as title', 
+          'type',
           'uri', 
           'completed', 
           'resources.lastOpened as lastOpened',
-          'topics.title as topicTitle'
+          'topics.title as topicTitle',
         )
         .join('resources', 'topics.id', 'resources.parent')
         .where({ 'topics.userId': userId, 'topics.id': topicId });
@@ -85,7 +87,7 @@ router.put('/:id', validateResource, (req, res, next) => {
   const userId = req.user.id;
   const resourceId = req.params.id;
 
-  const updateableFields = ['parent', 'title', 'uri', 'completed', 'lastOpened'];
+  const updateableFields = ['parent', 'title', 'type', 'uri', 'completed', 'lastOpened'];
   const updatedResource = {};
   updateableFields.forEach(field => {
     if(field in req.body) {
@@ -110,8 +112,8 @@ router.put('/:id', validateResource, (req, res, next) => {
 
 router.post('/', validateResource, (req, res, next) => {
   const userId = req.user.id;
-  const { parent, title, uri, completed, lastOpened } = req.body;
-
+  let { parent, title, uri, type, completed, lastOpened } = req.body;
+  
   Resource
     .query()
     .where({ userId, title })
@@ -125,7 +127,7 @@ router.post('/', validateResource, (req, res, next) => {
       
       return Resource
         .query()
-        .insert({ userId, parent, title, uri, completed, lastOpened })
+        .insert({ userId, parent, title, uri, type, completed, lastOpened })
         .returning('*');
     })
     .then(resource => {

@@ -8,20 +8,20 @@ const jwtAuth = require('../strategies/jwt');
 router.use(express.json());
 
 function createAuthToken(user) {
-	return jwt.sign({ user }, JWT_SECRET, {
-		subject: user.email,
-		expiresIn: JWT_EXPIRY
-	});
+  return jwt.sign({ user }, JWT_SECRET, {
+    subject: user.email,
+    expiresIn: JWT_EXPIRY
+  });
 }
 
 router.post('/login', localAuth, (req, res) => {
-	const authToken = createAuthToken(req.user);
-	res.json({ ...req.user, authToken });
+  const authToken = createAuthToken(req.user);
+  res.json({ ...req.user, authToken });
 });
 
 router.post('/refresh', jwtAuth, (req, res) => {
-	const authToken = createAuthToken(req.user);
-	res.json({ ...req.user, authToken });
+  const authToken = createAuthToken(req.user);
+  res.json({ ...req.user, authToken });
 });
 
 module.exports = router;
