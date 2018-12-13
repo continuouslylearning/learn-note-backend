@@ -5,6 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"start": "node index.js",
+		"dev": "nodemon index.js",
 		"heroku": "node index.js",
 		"test": "mocha",
 		"seed": "node seed.js"
@@ -34,6 +35,7 @@
 	"devDependencies": {
 		"chai": "^4.2.0",
 		"chai-http": "^4.2.0",
-		"mocha": "^5.2.0"
+		"mocha": "^5.2.0",
+		"nodemon": "^1.18.8"
 	}
 }
