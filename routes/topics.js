@@ -37,6 +37,71 @@ router.get('/', (req, res, next) => {
     .catch(next);
 });
 
+router.get('/:id', (req, res, next) => {
+  const userId = req.user.id;
+  const topicId = req.params.id;
+  const showNotebook = req.query.notebook;
+
+  return Folder
+    .query()
+    .select(
+      'topics.id as id', 
+      'topics.userId',
+      'topics.parent as folderId', 
+      'topics.title',
+      'notebook', 
+      'resourceOrder', 
+      'topics.createdAt',
+      'topics.updatedAt',
+      'folders.title as folderTitle',
+      'resources.id as resourceId', 
+      'resources.title as resourceTitle', 
+      'type',
+      'uri', 
+      'completed', 
+      'resources.lastOpened as lastOpened'
+    )
+    .rightJoin('topics', 'folders.id', 'topics.parent')
+    .leftJoin('resources', 'topics.id', 'resources.parent')
+    .where({ 'topics.userId': userId, 'topics.id': topicId })
+    .then(results => {
+      if(!results.length) return Promise.reject();
+
+      const item = results[0];
+
+      const topic = {
+        id: item.id,
+        userId: item.userId,
+        title: item.title,
+        parent: {
+          id: item.folderId,
+          title: item.folderTitle
+        },
+        notebook: item.notebook,
+        resourceOrder: item.resourceOrder,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        resources: []
+      };
+
+      results.forEach(item => {
+        topic.resources.push({
+          id: item.resourceId,
+          title: item.resourceTitle,
+          type: item.type,
+          uri: item.uri,
+          completed: item.completed,
+          lastOpened: item.lastOpened
+        });
+      });
+
+      if(showNotebook !== 'true') delete topic.notebook;
+
+      return res.json(topic);
+    })
+    .catch(next);
+});
+
 router.put('/:id', validateTopic, (req, res, next) => {
   const userId = req.user.id;
   const topicId = req.params.id;
