@@ -1,7 +1,8 @@
 const express = require('express');
 const Resource = require('../models/resource');
 const Topic = require('../models/topic');
-const validateResource = require('./validation/resource');
+const { requiredFields } = require('./validation/common');
+const { validateResource, appendResourceType } = require('./validation/resource');
 
 const router = express.Router();
 
@@ -73,7 +74,7 @@ router.put('/:id', validateResource, (req, res, next) => {
   const userId = req.user.id;
   const resourceId = req.params.id;
 
-  const updateableFields = ['parent', 'title', 'type', 'uri', 'completed', 'lastOpened'];
+  const updateableFields = ['title', 'completed', 'lastOpened'];
   const updatedResource = {};
   updateableFields.forEach(field => {
     if (field in req.body) {
@@ -95,7 +96,7 @@ router.put('/:id', validateResource, (req, res, next) => {
     .catch(next);
 });
 
-router.post('/', validateResource, (req, res, next) => {
+router.post('/', requiredFields(['title', 'parent', 'uri']), validateResource, appendResourceType, (req, res, next) => {
   const userId = req.user.id;
   let { parent, title, uri, type, completed, lastOpened } = req.body;
 

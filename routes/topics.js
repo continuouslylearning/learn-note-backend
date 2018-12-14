@@ -1,6 +1,7 @@
 const express = require('express');
 const Topic = require('../models/topic');
 const Folder = require('../models/folder');
+const { requiredFields } = require('./validation/common');
 const validateTopic = require('./validation/topic');
 
 const router = express.Router();
@@ -145,7 +146,7 @@ router.put('/:id', validateTopic, (req, res, next) => {
     .catch(next);
 });
 
-router.post('/', validateTopic, (req, res, next) => {
+router.post('/', requiredFields(['title']), validateTopic, (req, res, next) => {
   const userId = req.user.id;
 
   const { title, parent, resourceOrder, lastOpened, notebook } = req.body;
