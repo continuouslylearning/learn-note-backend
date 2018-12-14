@@ -5,6 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"start": "node index.js",
+		"dev": "nodemon index.js",
 		"heroku": "node index.js",
 		"test": "mocha",
 		"seed": "node seed.js"
@@ -29,11 +30,13 @@
 		"knex": "^0.15.2",
 		"morgan": "^1.9.1",
 		"objection": "^1.4.0",
-		"pg": "^7.7.1"
+		"pg": "^7.7.1",
+		"url-parse": "^1.4.4"
 	},
 	"devDependencies": {
 		"chai": "^4.2.0",
 		"chai-http": "^4.2.0",
-		"mocha": "^5.2.0"
+		"mocha": "^5.2.0",
+		"nodemon": "^1.18.8"
 	}
 }
