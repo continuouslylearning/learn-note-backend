@@ -1,16 +1,18 @@
 const usersData = [
-<<<<<<< HEAD
-  { id: 1000, name: 'Name', email: 'random@email.com', password: 'secret1000' },
+  {
+    id: 1000,
+    name: 'Name',
+    email: 'random@email.com',
+    password: 'password',
+    topicOrder: JSON.stringify([])
+  },
   {
     id: 2000,
     name: 'AnotherName',
     email: 'different@email.com',
-    password: 'notsosecret'
+    password: 'password',
+    topicOrder: JSON.stringify([])
   }
-=======
-  { id: 1000, name: 'Name', email: 'random@email.com', password: 'password' },
-  { id: 2000, name: 'AnotherName', email: 'different@email.com', password: 'password' }
->>>>>>> 8f87f6bb9f997754ca8465a89f4c183ac092628f
 ];
 
 const foldersData = [
@@ -151,7 +153,8 @@ const resourcesData = [
   {
     parent: 4001,
     title: 'Resource #13',
-    uri: 'https://stackoverflow.com/questions/24253814/cant-select-an-existing-column-in-postgresql',
+    uri:
+      'https://stackoverflow.com/questions/24253814/cant-select-an-existing-column-in-postgresql',
     completed: false,
     userId: 1000,
     type: 'other',
@@ -169,7 +172,8 @@ const resourcesData = [
   {
     parent: 4003,
     title: 'Resource #15',
-    uri: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now',
+    uri:
+      'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now',
     completed: false,
     userId: 1000,
     type: 'other',

@@ -1,7 +1,10 @@
 const Topic = require('../../models/topic');
 const Url = require('url-parse');
 
-const isValidUri = uri => /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/.test(uri);
+const isValidUri = uri =>
+  /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/.test(
+    uri
+  );
 
 function appendResourceType(req, res, next) {
   const { uri } = req.body;
@@ -36,35 +39,17 @@ function validateResource(req, res, next) {
     return next(err);
   }
 
-<<<<<<< HEAD
-  if (
-    'type' in req.body &&
-    (req.body.type !== 'youtube' && req.body.type !== 'other')
-  ) {
-    const err = new Error(
-      'Only allowed values for `type` are `youtube` and `other`'
-    );
-=======
   if ('uri' in req.body && !isValidUri(req.body.uri)) {
     const err = new Error('Uri is invalid.');
->>>>>>> 8f87f6bb9f997754ca8465a89f4c183ac092628f
     err.status = 422;
     return next(err);
   }
 
-<<<<<<< HEAD
-  if ('type' in req.body && req.body.type === 'youtube') {
-    try {
-      req.body.uri = req.body.uri.split('v=')[1].slice(0, 11);
-    } catch (e) {
-      const err = new Error('Youtube url is invalid');
-=======
   if ('parent' in req.body && typeof parent !== 'number') {
     req.body.parent = Number(parent);
 
     if (Number.isNaN(req.body.parent)) {
       const err = new Error('Parent is invalid.');
->>>>>>> 8f87f6bb9f997754ca8465a89f4c183ac092628f
       err.status = 422;
       return next(err);
     }
