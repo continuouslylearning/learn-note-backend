@@ -23,8 +23,10 @@ router.get('/', (req, res, next) => {
       'folders.title as folderTitle'
     )
     .modify(queryBuilder => {
-      if (shouldSelectNotebooks) queryBuilder.select('topics.notebook as notebook');
-      if (shouldSelectResourceOrder) queryBuilder.select('topics.resourceOrder as resourceOrder');
+      if (shouldSelectNotebooks)
+        queryBuilder.select('topics.notebook as notebook');
+      if (shouldSelectResourceOrder)
+        queryBuilder.select('topics.resourceOrder as resourceOrder');
       return queryBuilder;
     })
     .rightJoin('topics', 'folders.id', 'topics.parent')
@@ -63,8 +65,10 @@ router.get('/:id', (req, res, next) => {
     )
     .rightJoin('topics', 'folders.id', 'topics.parent')
     .modify(queryBuilder => {
-      if (shouldShowNotebook) queryBuilder.select('topics.notebook as notebook');
-      if (shouldShowResourceOrder) queryBuilder.select('topics.resourceOrder as resourceOrder');
+      if (shouldShowNotebook)
+        queryBuilder.select('topics.notebook as notebook');
+      if (shouldShowResourceOrder)
+        queryBuilder.select('topics.resourceOrder as resourceOrder');
       if (shouldShowResources) {
         queryBuilder
           .select(
@@ -123,7 +127,13 @@ router.put('/:id', validateTopic, (req, res, next) => {
   const userId = req.user.id;
   const topicId = req.params.id;
 
-  const updateableFields = ['title', 'parent', 'lastOpened', 'notebook', 'resourceOrder'];
+  const updateableFields = [
+    'title',
+    'parent',
+    'lastOpened',
+    'notebook',
+    'resourceOrder'
+  ];
   const updatedTopic = {};
   updateableFields.forEach(field => {
     if (field in req.body) {
