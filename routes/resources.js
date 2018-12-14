@@ -1,7 +1,8 @@
 const express = require('express');
 const Resource = require('../models/resource');
 const Topic = require('../models/topic');
-const validateResource = require('./validation/resource');
+const { requiredFields } = require('./validation/common');
+const { validateResource, appendResourceType } = require('./validation/resource');
 
 const router = express.Router();
 
@@ -9,25 +10,23 @@ router.get('/', (req, res, next) => {
   const userId = req.user.id;
   const { limit, orderBy } = req.query;
 
-  Topic
-    .query()
+  Topic.query()
     .select(
-      'resources.id as id', 
-      'resources.parent as parent', 
-      'resources.title as title', 
-      'type',
-      'uri', 
-      'completed', 
+      'resources.id as id',
+      'resources.parent as parent',
+      'resources.title as title',
+      'resources.type as type',
+      'resources.uri as uri',
+      'resources.completed as completed',
       'resources.lastOpened as lastOpened',
       'topics.title as topicTitle'
     )
     .join('resources', 'topics.id', 'resources.parent')
     .where({ 'topics.userId': userId })
     .modify(query => {
-      if(limit) query.limit(limit);
-    })
-    .modify(query => {
-      if(orderBy) query.orderBy(orderBy, 'desc');
+      if (limit) query.limit(limit);
+      if (orderBy) query.orderBy(orderBy, 'desc');
+      return query;
     })
     .then(results => {
       results.forEach(result => {
@@ -37,7 +36,7 @@ router.get('/', (req, res, next) => {
         };
         delete result.topicTitle;
       });
-      results.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+      // results.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
       return res.json(results);
     })
     .catch(next);
@@ -45,40 +44,28 @@ router.get('/', (req, res, next) => {
 
 router.get('/:id', (req, res, next) => {
   const userId = req.user.id;
-  const topicId = req.params.id;
+  const id = req.params.id;
 
-  Topic
-    .query()
-    .where({ userId, id: topicId })
-    .first()
-    .then(topic => {
-      if(!topic) return Promise.reject();
-
-      return Topic
-        .query()
-        .select(
-          'resources.id as id', 
-          'resources.parent as parent', 
-          'resources.title as title', 
-          'type',
-          'uri', 
-          'completed', 
-          'resources.lastOpened as lastOpened',
-          'topics.title as topicTitle',
-        )
-        .join('resources', 'topics.id', 'resources.parent')
-        .where({ 'topics.userId': userId, 'topics.id': topicId });
-    })
-    .then(resources => {
-      resources.forEach(resource => {
-        resource.parent = {
-          id: resource.parent,
-          title: resource.topicTitle
-        };
-        delete resource.topicTitle;
-      });
-      resources.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
-      return res.json(resources);
+  return Resource.query()
+    .select(
+      'resources.id as id',
+      'resources.parent as parentId',
+      'resources.title as title',
+      'resources.type as type',
+      'resources.uri as uri',
+      'resources.completed as completed',
+      'resources.lastOpened as lastOpened',
+      'topics.title as parentTitle'
+    )
+    .from('resources')
+    .leftJoin('topics', 'resources.parent', 'topics.id')
+    .where({ 'resources.userId': userId, 'resources.id': id })
+    .then(([resource]) => {
+      if (!resource) return Promise.reject();
+      // Normalize parent to an object
+      resource.parent = { id: resource.parentId, title: resource.parentTitle };
+      delete resource.parentId, delete resource.parentTitle;
+      return res.json(resource);
     })
     .catch(next);
 });
@@ -87,22 +74,21 @@ router.put('/:id', validateResource, (req, res, next) => {
   const userId = req.user.id;
   const resourceId = req.params.id;
 
-  const updateableFields = ['parent', 'title', 'type', 'uri', 'completed', 'lastOpened'];
+  const updateableFields = ['title', 'completed', 'lastOpened'];
   const updatedResource = {};
   updateableFields.forEach(field => {
-    if(field in req.body) {
+    if (field in req.body) {
       updatedResource[field] = req.body[field];
     }
   });
-  
-  Resource
-    .query()
+
+  Resource.query()
     .update(updatedResource)
     .where({ id: resourceId, userId })
     .returning('*')
     .first()
     .then(resource => {
-      if(!resource) {
+      if (!resource) {
         return Promise.reject();
       }
       return res.status(201).json(resource);
@@ -110,27 +96,26 @@ router.put('/:id', validateResource, (req, res, next) => {
     .catch(next);
 });
 
-router.post('/', validateResource, (req, res, next) => {
+router.post('/', requiredFields(['title', 'parent', 'uri']), validateResource, appendResourceType, (req, res, next) => {
   const userId = req.user.id;
   let { parent, title, uri, type, completed, lastOpened } = req.body;
-  
-  Resource
-    .query()
+
+  Resource.query()
     .where({ userId, title })
     .first()
     .then(resource => {
-      if(resource) {
+      if (resource) {
         const err = new Error('Resource with this title already exists');
         err.status = 422;
         return Promise.reject(err);
       }
-      
-      return Resource
-        .query()
+
+      return Resource.query()
         .insert({ userId, parent, title, uri, type, completed, lastOpened })
         .returning('*');
     })
     .then(resource => {
+      delete resource.userId;
       return res.status(201).json(resource);
     })
     .catch(next);
@@ -140,20 +125,18 @@ router.delete('/:id', (req, res, next) => {
   const resourceId = req.params.id;
   const userId = req.user.id;
 
-  Resource
-    .query()
+  Resource.query()
     .delete()
     .where({ userId, id: resourceId })
     .returning('*')
     .first()
     .then(resource => {
-      if(!resource){
+      if (!resource) {
         return Promise.reject();
       }
       return res.sendStatus(204);
     })
     .catch(next);
 });
-
 
 module.exports = router;
