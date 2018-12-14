@@ -2,7 +2,10 @@ const express = require('express');
 const Resource = require('../models/resource');
 const Topic = require('../models/topic');
 const { requiredFields } = require('./validation/common');
-const { validateResource, appendResourceType } = require('./validation/resource');
+const {
+  validateResource,
+  appendResourceType
+} = require('./validation/resource');
 
 const router = express.Router();
 
@@ -96,30 +99,36 @@ router.put('/:id', validateResource, (req, res, next) => {
     .catch(next);
 });
 
-router.post('/', requiredFields(['title', 'parent', 'uri']), validateResource, appendResourceType, (req, res, next) => {
-  const userId = req.user.id;
-  let { parent, title, uri, type, completed, lastOpened } = req.body;
+router.post(
+  '/',
+  requiredFields(['title', 'parent', 'uri']),
+  validateResource,
+  appendResourceType,
+  (req, res, next) => {
+    const userId = req.user.id;
+    let { parent, title, uri, type, completed, lastOpened } = req.body;
 
-  Resource.query()
-    .where({ userId, title })
-    .first()
-    .then(resource => {
-      if (resource) {
-        const err = new Error('Resource with this title already exists');
-        err.status = 422;
-        return Promise.reject(err);
-      }
+    Resource.query()
+      .where({ userId, title })
+      .first()
+      .then(resource => {
+        if (resource) {
+          const err = new Error('Resource with this title already exists');
+          err.status = 422;
+          return Promise.reject(err);
+        }
 
-      return Resource.query()
-        .insert({ userId, parent, title, uri, type, completed, lastOpened })
-        .returning('*');
-    })
-    .then(resource => {
-      delete resource.userId;
-      return res.status(201).json(resource);
-    })
-    .catch(next);
-});
+        return Resource.query()
+          .insert({ userId, parent, title, uri, type, completed, lastOpened })
+          .returning('*');
+      })
+      .then(resource => {
+        delete resource.userId;
+        return res.status(201).json(resource);
+      })
+      .catch(next);
+  }
+);
 
 router.delete('/:id', (req, res, next) => {
   const resourceId = req.params.id;
