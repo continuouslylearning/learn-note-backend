@@ -23,13 +23,43 @@ const topicsData = [
     title: 'Node',
     parent: 3001,
     userId: 1000,
-    resourceOrder: [1, 2]
+    resourceOrder: JSON.stringify([1, 2])
   },
-  { id: 4001, title: 'ES6', parent: 3001, userId: 1000, resourceOrder:[3,4,13] },
-  { id: 4002, title: 'Spring', parent: 3002, userId: 1000, resourceOrder:[5,6,14] },
-  { id: 4003, title: 'Java8', parent: 3002, userId: 1000, resourceOrder:[7,8,15]  },
-  { id: 4004, title: 'Binary search tree', parent: 3003, userId: 1000, resourceOrder:[9,10]  },
-  { id: 4005, title: 'Sort algorithms', parent: 3003, userId: 1000, resourceOrder:[11,12]  },
+  {
+    id: 4001,
+    title: 'ES6',
+    parent: 3001,
+    userId: 1000,
+    resourceOrder: JSON.stringify([3, 4, 13])
+  },
+  {
+    id: 4002,
+    title: 'Spring',
+    parent: 3002,
+    userId: 1000,
+    resourceOrder: JSON.stringify([5, 6, 14])
+  },
+  {
+    id: 4003,
+    title: 'Java8',
+    parent: 3002,
+    userId: 1000,
+    resourceOrder: JSON.stringify([7, 8, 15])
+  },
+  {
+    id: 4004,
+    title: 'Binary search tree',
+    parent: 3003,
+    userId: 1000,
+    resourceOrder: JSON.stringify([9, 10])
+  },
+  {
+    id: 4005,
+    title: 'Sort algorithms',
+    parent: 3003,
+    userId: 1000,
+    resourceOrder: JSON.stringify([11, 12])
+  },
   {
     id: 4006,
     title: 'Object oriented programming',
@@ -42,7 +72,7 @@ const topicsData = [
 // EXPECT 'Resource #4' to be first when orderedBy=lastOpened
 const resourcesData = [
   {
-    id: 1
+    id: 1,
     parent: 4000,
     title: 'Resource #1',
     uri: '4DfzRRkiPX4',
