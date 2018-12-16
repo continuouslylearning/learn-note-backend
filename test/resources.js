@@ -28,7 +28,7 @@ describe('RESOURCES API', function() {
   let knex;
 
   before(function() {
-    this.timeout(4000);
+    this.timeout(10000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
@@ -46,24 +46,21 @@ describe('RESOURCES API', function() {
         token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
         return Folder.query().insert(foldersData);
       })
-      .then(() => {
-        return Topic.query().insert(topicsData);
-      })
-      .then(() => {
-        return Resource.query().insert(resourcesData);
-      });
+      .then(() => Topic.query().insert(topicsData))
+      .then(() => Resource.query().insert(resourcesData))
+      .then(() => knex.raw('SELECT setval(\'resources_id_seq\', (SELECT MAX(id) from "resources"));'))
+      .then(() => knex.raw('SELECT setval(\'topics_id_seq\', (SELECT MAX(id) from "topics"));'))
+      .then(() => knex.raw('SELECT setval(\'folders_id_seq\', (SELECT MAX(id) from "folders"));'))
+      .then(() => knex.raw('SELECT setval(\'users_id_seq\', (SELECT MAX(id) from "users"));'));
   });
 
   afterEach(function() {
-    return Folder.query()
+    return Resource.query()
       .delete()
       .where({})
-      .then(() => {
-        return User.query().delete();
-      })
-      .then(() => {
-        return Topic.query().delete();
-      });
+      .then(() => Topic.query().delete())
+      .then(() => Folder.query().delete())
+      .then(() => User.query().delete());
   });
 
   after(function() {

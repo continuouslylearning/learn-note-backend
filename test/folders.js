@@ -48,7 +48,9 @@ describe('FOLDERS API', function(){
         return Folder
           .query()
           .insert(foldersData);
-      });
+      })
+      .then(() => knex.raw('SELECT setval(\'folders_id_seq\', (SELECT MAX(id) from "folders"));'))
+      .then(() => knex.raw('SELECT setval(\'users_id_seq\', (SELECT MAX(id) from "users"));'));
   });
 
   afterEach(function(){
