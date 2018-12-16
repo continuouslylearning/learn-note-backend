@@ -25,12 +25,48 @@ const foldersData = [
 ];
 
 const topicsData = [
-  { id: 4000, title: 'Node', parent: 3001, userId: 1000 },
-  { id: 4001, title: 'ES6', parent: 3001, userId: 1000 },
-  { id: 4002, title: 'Spring', parent: 3002, userId: 1000 },
-  { id: 4003, title: 'Java8', parent: 3002, userId: 1000 },
-  { id: 4004, title: 'Binary search tree', parent: 3003, userId: 1000 },
-  { id: 4005, title: 'Sort algorithms', parent: 3003, userId: 1000 },
+  {
+    id: 4000,
+    title: 'Node',
+    parent: 3001,
+    userId: 1000,
+    resourceOrder: JSON.stringify([1, 2])
+  },
+  {
+    id: 4001,
+    title: 'ES6',
+    parent: 3001,
+    userId: 1000,
+    resourceOrder: JSON.stringify([3, 4, 13])
+  },
+  {
+    id: 4002,
+    title: 'Spring',
+    parent: 3002,
+    userId: 1000,
+    resourceOrder: JSON.stringify([5, 6, 14])
+  },
+  {
+    id: 4003,
+    title: 'Java8',
+    parent: 3002,
+    userId: 1000,
+    resourceOrder: JSON.stringify([7, 8, 15])
+  },
+  {
+    id: 4004,
+    title: 'Binary search tree',
+    parent: 3003,
+    userId: 1000,
+    resourceOrder: JSON.stringify([9, 10])
+  },
+  {
+    id: 4005,
+    title: 'Sort algorithms',
+    parent: 3003,
+    userId: 1000,
+    resourceOrder: JSON.stringify([11, 12])
+  },
   {
     id: 4006,
     title: 'Object oriented programming',
@@ -43,6 +79,7 @@ const topicsData = [
 // EXPECT 'Resource #4' to be first when orderedBy=lastOpened
 const resourcesData = [
   {
+    id: 1,
     parent: 4000,
     title: 'Resource #1',
     uri: '4DfzRRkiPX4',
@@ -52,6 +89,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 2,
     parent: 4000,
     title: 'Resource #2',
     uri: 'B7hVxCmfPtM',
@@ -61,6 +99,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 3,
     parent: 4001,
     title: 'Resource #3',
     uri: 'B7hVxCmfPtM',
@@ -70,6 +109,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 4,
     parent: 4001,
     title: 'Resource #4',
     uri: 'B7hVxCmfPtM',
@@ -79,6 +119,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now()).toISOString()
   },
   {
+    id: 5,
     parent: 4002,
     title: 'Resource #5',
     uri: 'https://medium.com/s/story/antitrusts-most-wanted-6c05388bdfb7',
@@ -88,6 +129,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 6,
     parent: 4002,
     title: 'Resource #6',
     uri: 'https://react-redux.js.org/using-react-redux/connect-mapdispatch',
@@ -97,6 +139,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 7,
     parent: 4003,
     title: 'Resource #7',
     uri: 'IhZkqUj0hRM',
@@ -106,6 +149,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 8,
     parent: 4003,
     title: 'Resource #8',
     uri: 'https://knexjs.org/#Builder-join',
@@ -115,6 +159,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 9,
     parent: 4004,
     title: 'Resource #9',
     uri: 'Vo27zNDDuw0',
@@ -124,6 +169,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 10,
     parent: 4004,
     title: 'Resource #10',
     uri: 'VWHlPH23P-w',
@@ -133,6 +179,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 11,
     parent: 4005,
     title: 'Resource #11',
     uri: 'https://expressjs.com/en/4x/api.html#req.query',
@@ -142,6 +189,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 12,
     parent: 4005,
     title: 'Resource #12',
     uri: 'nOvclikfXZY',
@@ -151,6 +199,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 13,
     parent: 4001,
     title: 'Resource #13',
     uri:
@@ -161,6 +210,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 14,
     parent: 4002,
     title: 'Resource #14',
     uri: 'vorkmWa7He8',
@@ -170,6 +220,7 @@ const resourcesData = [
     lastOpened: new Date(Date.now() - Math.random() * 100000000).toISOString()
   },
   {
+    id: 15,
     parent: 4003,
     title: 'Resource #15',
     uri:
