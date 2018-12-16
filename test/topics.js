@@ -45,21 +45,16 @@ describe('TOPICS API', function() {
         token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
         return Folder.query().insert(foldersData);
       })
-      .then(() => {
-        return Topic.query().insert(topicsData);
-      });
+      .then(() => Topic.query().insert(topicsData))
+      .then(() => knex.raw('SELECT setval(\'topics_id_seq\', (SELECT MAX(id) from "topics"));'))
+      .then(() => knex.raw('SELECT setval(\'folders_id_seq\', (SELECT MAX(id) from "folders"));'))
+      .then(() => knex.raw('SELECT setval(\'users_id_seq\', (SELECT MAX(id) from "users"));'));
   });
 
   afterEach(function() {
-    return Folder.query()
-      .delete()
-      .where({})
-      .then(() => {
-        return User.query().delete();
-      })
-      .then(() => {
-        return Topic.query().delete();
-      });
+    return Topic.query().delete()
+      .then(() => Folder.query().delete())
+      .then(() => User.query().delete());
   });
 
   after(function() {
