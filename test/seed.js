@@ -1,10 +1,17 @@
 const usersData = [
-  { id: 1000, name: 'Name', email: 'random@email.com', password: 'password' },
+  {
+    id: 1000,
+    name: 'Name',
+    email: 'random@email.com',
+    password: 'password',
+    topicOrder: JSON.stringify([])
+  },
   {
     id: 2000,
     name: 'AnotherName',
     email: 'different@email.com',
-    password: 'password'
+    password: 'password',
+    topicOrder: JSON.stringify([])
   }
 ];
 
