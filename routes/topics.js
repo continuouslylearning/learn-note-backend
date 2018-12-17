@@ -3,6 +3,7 @@ const Topic = require('../models/topic');
 const Folder = require('../models/folder');
 const { requiredFields } = require('./validation/common');
 const validateTopic = require('./validation/topic');
+const { appendParent } = require('./helpers');
 
 const router = express.Router();
 
@@ -23,20 +24,15 @@ router.get('/', (req, res, next) => {
       'folders.title as folderTitle'
     )
     .modify(queryBuilder => {
-      if (shouldSelectNotebooks)
-        queryBuilder.select('topics.notebook as notebook');
-      if (shouldSelectResourceOrder)
-        queryBuilder.select('topics.resourceOrder as resourceOrder');
+      if (shouldSelectNotebooks) queryBuilder.select('topics.notebook as notebook');
+      if (shouldSelectResourceOrder) queryBuilder.select('topics.resourceOrder as resourceOrder');
       return queryBuilder;
     })
     .rightJoin('topics', 'folders.id', 'topics.parent')
     .where({ 'topics.userId': userId })
     .then(topics => {
       topics.forEach(topic => {
-        topic.parent = {
-          id: topic.parent,
-          title: topic.folderTitle
-        };
+        appendParent(topic, topic.parent, topic.folderTitle);
         delete topic.folderTitle;
       });
       return res.json(topics);
@@ -65,10 +61,8 @@ router.get('/:id', (req, res, next) => {
     )
     .rightJoin('topics', 'folders.id', 'topics.parent')
     .modify(queryBuilder => {
-      if (shouldShowNotebook)
-        queryBuilder.select('topics.notebook as notebook');
-      if (shouldShowResourceOrder)
-        queryBuilder.select('topics.resourceOrder as resourceOrder');
+      if (shouldShowNotebook) queryBuilder.select('topics.notebook as notebook');
+      if (shouldShowResourceOrder) queryBuilder.select('topics.resourceOrder as resourceOrder');
       if (shouldShowResources) {
         queryBuilder
           .select(
@@ -91,13 +85,10 @@ router.get('/:id', (req, res, next) => {
       const topic = {
         id: item.id,
         title: item.title,
-        parent: {
-          id: item.folderId,
-          title: item.folderTitle
-        },
         createdAt: item.createdAt,
         updatedAt: item.updatedAt
       };
+      appendParent(topic, item.folderId, item.folderTitle);
 
       if (shouldShowNotebook) topic.notebook = item.notebook;
 
@@ -123,17 +114,11 @@ router.get('/:id', (req, res, next) => {
     .catch(next);
 });
 
-router.put('/:id', validateTopic, (req, res, next) => {
+router.put('/:id', validateTopic, async (req, res, next) => {
   const userId = req.user.id;
   const topicId = req.params.id;
 
-  const updateableFields = [
-    'title',
-    'parent',
-    'lastOpened',
-    'notebook',
-    'resourceOrder'
-  ];
+  const updateableFields = ['title', 'parent', 'lastOpened', 'notebook', 'resourceOrder'];
   const updatedTopic = {};
   updateableFields.forEach(field => {
     if (field in req.body) {
@@ -141,44 +126,67 @@ router.put('/:id', validateTopic, (req, res, next) => {
     }
   });
 
-  return Topic.query()
-    .update(updatedTopic)
-    .where({ userId, id: topicId })
-    .returning('*')
-    .first()
-    .then(topic => {
-      if (!topic) {
-        return Promise.reject();
-      }
-      delete topic.userId;
-      return res.status(201).json(topic);
-    })
-    .catch(next);
+  try {
+    const topic = await Topic.query()
+      .update(updatedTopic)
+      .where({ userId, id: topicId })
+      .returning('*')
+      .first();
+
+    if (!topic) throw new Error();
+
+    delete topic.userId;
+
+    // If a parent exists, append it to the response
+    if (topic.parent) {
+      topic.parent = await Folder.query()
+        .select('id', 'title')
+        .where({ id: topic.parent })
+        .first();
+    }
+
+    return res.status(201).json(topic);
+  } catch (e) {
+    return next(e);
+  }
 });
 
-router.post('/', requiredFields(['title']), validateTopic, (req, res, next) => {
+router.post('/', requiredFields(['title']), validateTopic, async (req, res, next) => {
   const userId = req.user.id;
 
   const { title, parent, resourceOrder, lastOpened, notebook } = req.body;
 
-  Topic.query()
-    .where({ userId, title })
-    .first()
-    .then(topic => {
-      if (topic) {
-        const err = new Error('Topic with this title already exists');
-        err.status = 422;
-        return Promise.reject(err);
-      }
-      return Topic.query()
-        .insert({ userId, title, parent, resourceOrder, lastOpened, notebook })
-        .returning('*');
-    })
-    .then(topic => {
-      delete topic.userId;
-      return res.status(201).json(topic);
-    })
-    .catch(next);
+  try {
+    const topicExists = await Topic.query()
+      .where({ userId, title })
+      .first();
+
+    if (topicExists) {
+      const err = {
+        message: 'Topic with this title already exists',
+        status: 422
+      };
+      throw err;
+    }
+
+    const topic = await Topic.query()
+      .insert({ userId, title, parent, resourceOrder, lastOpened, notebook })
+      .returning('*');
+
+    delete topic.userId;
+
+    // If a parent exists, append it to the response
+    if (topic.parent) {
+      topic.parent = await Folder.query()
+        .select('id', 'title')
+        .where({ id: topic.parent })
+        .first();
+    }
+
+    return res.status(201).json(topic);
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.delete('/:id', (req, res, next) => {
