@@ -3,9 +3,20 @@ const Topic = require('../models/topic');
 const Folder = require('../models/folder');
 const { requiredFields } = require('./validation/common');
 const validateTopic = require('./validation/topic');
-const { appendParent } = require('./helpers');
 
 const router = express.Router();
+
+/**
+ * Given the object to modify, adds the parent field OR null
+ * @param {{}} obj
+ * @param {number} id
+ * @param {string} title
+ */
+const appendParent = (obj, id, title) => {
+  if (id && title) {
+    obj.parent = { id, title };
+  } else obj.parent = null;
+};
 
 router.get('/', (req, res, next) => {
   // Configure ?notebooks
