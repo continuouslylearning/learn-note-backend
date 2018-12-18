@@ -8,7 +8,12 @@ const router = express.Router();
 
 router.get('/', (req, res, next) => {
   const userId = req.user.id;
-  const { limit, orderBy } = req.query;
+  // Configure ?orderBy
+  const shouldOrderByColumn = req.query.orderBy || false;
+  // Configure ?orderDirection
+  const orderDirection = req.query.orderDirection || 'desc';
+  // Configure ?limit
+  const limit = req.query.limit;
 
   Topic.query()
     .select(
@@ -24,8 +29,8 @@ router.get('/', (req, res, next) => {
     .join('resources', 'topics.id', 'resources.parent')
     .where({ 'topics.userId': userId })
     .modify(query => {
+      if (shouldOrderByColumn) query.orderBy(shouldOrderByColumn, orderDirection);
       if (limit) query.limit(limit);
-      if (orderBy) query.orderBy(orderBy, 'desc');
       return query;
     })
     .then(results => {

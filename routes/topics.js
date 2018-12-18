@@ -23,6 +23,12 @@ router.get('/', (req, res, next) => {
   const shouldSelectNotebooks = req.query.notebooks || false;
   // Configure ?resourceOrder
   const shouldSelectResourceOrder = req.query.resourceOrder || false;
+  // Configure ?orderBy
+  const shouldOrderByColumn = req.query.orderBy || false;
+  // Configure ?orderDirection
+  const orderDirection = req.query.orderDirection || 'desc';
+  // Configure ?limit
+  const limit = req.query.limit;
 
   const userId = req.user.id;
   return Folder.query()
@@ -34,10 +40,12 @@ router.get('/', (req, res, next) => {
       'topics.updatedAt',
       'folders.title as folderTitle'
     )
-    .modify(queryBuilder => {
-      if (shouldSelectNotebooks) queryBuilder.select('topics.notebook as notebook');
-      if (shouldSelectResourceOrder) queryBuilder.select('topics.resourceOrder as resourceOrder');
-      return queryBuilder;
+    .modify(query => {
+      if (shouldSelectNotebooks) query.select('topics.notebook as notebook');
+      if (shouldSelectResourceOrder) query.select('topics.resourceOrder as resourceOrder');
+      if (shouldOrderByColumn) query.orderBy(shouldOrderByColumn, orderDirection);
+      if (limit) query.limit(limit);
+      return query;
     })
     .rightJoin('topics', 'folders.id', 'topics.parent')
     .where({ 'topics.userId': userId })
@@ -71,11 +79,11 @@ router.get('/:id', (req, res, next) => {
       'folders.title as folderTitle'
     )
     .rightJoin('topics', 'folders.id', 'topics.parent')
-    .modify(queryBuilder => {
-      if (shouldShowNotebook) queryBuilder.select('topics.notebook as notebook');
-      if (shouldShowResourceOrder) queryBuilder.select('topics.resourceOrder as resourceOrder');
+    .modify(query => {
+      if (shouldShowNotebook) query.select('topics.notebook as notebook');
+      if (shouldShowResourceOrder) query.select('topics.resourceOrder as resourceOrder');
       if (shouldShowResources) {
-        queryBuilder
+        query
           .select(
             'resources.id as resourceId',
             'resources.title as resourceTitle',
@@ -86,7 +94,7 @@ router.get('/:id', (req, res, next) => {
           )
           .leftJoin('resources', 'topics.id', 'resources.parent');
       }
-      return queryBuilder;
+      return query;
     })
     .where({ 'topics.userId': userId, 'topics.id': topicId })
     .then(results => {

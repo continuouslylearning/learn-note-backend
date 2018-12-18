@@ -7,9 +7,20 @@ const router = express.Router();
 
 router.get('/', (req, res, next) => {
   const userId = req.user.id;
+  // Configure ?orderBy
+  const shouldOrderByColumn = req.query.orderBy || false;
+  // Configure ?orderDirection
+  const orderDirection = req.query.orderDirection || 'desc';
+  // Configure ?limit
+  const limit = req.query.limit;
 
   Folder.query()
     .where({ userId })
+    .modify(query => {
+      if (shouldOrderByColumn) query.orderBy(shouldOrderByColumn, orderDirection);
+      if (limit) query.limit(limit);
+      return query;
+    })
     .then(folders => {
       return res.json(folders);
     })
