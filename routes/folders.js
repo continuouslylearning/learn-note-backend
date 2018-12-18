@@ -11,12 +11,15 @@ router.get('/', (req, res, next) => {
   const shouldOrderByColumn = req.query.orderBy || false;
   // Configure ?orderDirection
   const orderDirection = req.query.orderDirection || 'desc';
+  // Configure ?limit
+  const limit = req.query.limit;
 
   Folder.query()
     .where({ userId })
-    .modify(queryBuilder => {
-      if (shouldOrderByColumn) queryBuilder.orderBy(shouldOrderByColumn, orderDirection);
-      return queryBuilder;
+    .modify(query => {
+      if (shouldOrderByColumn) query.orderBy(shouldOrderByColumn, orderDirection);
+      if (limit) query.limit(limit);
+      return query;
     })
     .then(folders => {
       return res.json(folders);
