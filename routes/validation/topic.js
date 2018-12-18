@@ -29,7 +29,7 @@ function validateTopic(req, res, next) {
       return next(err);
     }
   }
-  if ('parent' in req.body) {
+  if ('parent' in req.body && parent !== null) {
     return Folder.query()
       .where({ userId, id: parent })
       .first()

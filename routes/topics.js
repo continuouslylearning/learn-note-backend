@@ -133,6 +133,7 @@ router.put('/:id', validateTopic, async (req, res, next) => {
   const updatedTopic = {};
   updateableFields.forEach(field => {
     if (field in req.body) {
+      if (req.body[field] === 0) req.body[field] = null;
       updatedTopic[field] = req.body[field];
     }
   });
