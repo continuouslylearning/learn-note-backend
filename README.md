@@ -85,7 +85,7 @@ Resources {
 
 | Status Code  | Meaning |
 | ------------- | ------------- |
-| 200  | The get request for the resource was successful  |
+| 200  | The GET request for the resource was successful  |
 | 201  | The request to create, update or delete the resource was successful and the resource was returned in the response  |
 | 204  | The request to create, update or delete the resource was successful but content was not returned in the response  |
 | 400  | The request cannot be processed because of a client error. The request is missing a required field or an invalid value was provided for a field |
