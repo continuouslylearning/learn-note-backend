@@ -23,6 +23,10 @@ router.get('/', (req, res, next) => {
   const shouldSelectNotebooks = req.query.notebooks || false;
   // Configure ?resourceOrder
   const shouldSelectResourceOrder = req.query.resourceOrder || false;
+  // Configure ?orderBy
+  const shouldOrderByColumn = req.query.orderBy || false;
+  // Configure ?orderDirection
+  const orderDirection = req.query.orderDirection || 'desc';
 
   const userId = req.user.id;
   return Folder.query()
@@ -37,6 +41,7 @@ router.get('/', (req, res, next) => {
     .modify(queryBuilder => {
       if (shouldSelectNotebooks) queryBuilder.select('topics.notebook as notebook');
       if (shouldSelectResourceOrder) queryBuilder.select('topics.resourceOrder as resourceOrder');
+      if (shouldOrderByColumn) queryBuilder.orderBy(shouldOrderByColumn, orderDirection);
       return queryBuilder;
     })
     .rightJoin('topics', 'folders.id', 'topics.parent')

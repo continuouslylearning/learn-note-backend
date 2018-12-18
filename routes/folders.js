@@ -7,9 +7,17 @@ const router = express.Router();
 
 router.get('/', (req, res, next) => {
   const userId = req.user.id;
+  // Configure ?orderBy
+  const shouldOrderByColumn = req.query.orderBy || false;
+  // Configure ?orderDirection
+  const orderDirection = req.query.orderDirection || 'desc';
 
   Folder.query()
     .where({ userId })
+    .modify(queryBuilder => {
+      if (shouldOrderByColumn) queryBuilder.orderBy(shouldOrderByColumn, orderDirection);
+      return queryBuilder;
+    })
     .then(folders => {
       return res.json(folders);
     })
