@@ -89,28 +89,38 @@ router.put('/:id', validateResource, async (req, res, next) => {
   });
 
   try {
+    let resource = await Resource.query()
+      .where({ userId, id: resourceId })
+      .first();
+
+    if(!resource) {
+      return next();
+    }
+
+    const parentTopicId = resource.parent;
+
     if('title' in updatedResource){
       const titleExists = await Resource.query()
-        .where({ userId, title: req.body.title })
+        .where({ 
+          userId, 
+          parent: parentTopicId,
+          title: req.body.title,  
+        })
         .whereNot({ id: resourceId })
         .first();
 
       if(titleExists){
-        const err = new Error('Resource title already exists');
+        const err = new Error('Resource with this title already exists');
         err.status = 400;
         throw err;
       }
     }
 
-    const resource = await Resource.query()
+    resource = await Resource.query()
       .update(updatedResource)
-      .where({ id: resourceId, userId })
+      .where({ userId, id: resourceId })
       .returning('*')
       .first();
-
-    if(!resource){
-      return next();
-    }
 
     delete resource.userId;
 

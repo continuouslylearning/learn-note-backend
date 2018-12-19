@@ -78,7 +78,6 @@ function createResources(knex) {
         .onDelete('CASCADE');
       table
         .string('title')
-        .unique()
         .notNullable();
       table.string('uri').notNullable();
       table.enum('type', ['youtube', 'other']).notNullable();
@@ -90,6 +89,8 @@ function createResources(knex) {
         .timestamp('lastOpened')
         .notNullable()
         .defaultTo(knex.fn.now());
+      table
+        .unique(['parent', 'title']);
     });
   });
 }
