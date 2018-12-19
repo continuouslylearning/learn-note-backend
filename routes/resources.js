@@ -75,30 +75,56 @@ router.get('/:id', (req, res, next) => {
     .catch(next);
 });
 
-router.put('/:id', validateResource, (req, res, next) => {
+router.put('/:id', validateResource, async (req, res, next) => {
   const userId = req.user.id;
   const resourceId = req.params.id;
 
   const updateableFields = ['title', 'completed', 'lastOpened'];
   const updatedResource = {};
+
   updateableFields.forEach(field => {
     if (field in req.body) {
       updatedResource[field] = req.body[field];
     }
   });
 
-  Resource.query()
-    .update(updatedResource)
-    .where({ id: resourceId, userId })
-    .returning('*')
-    .first()
-    .then(resource => {
-      if (!resource) {
-        return Promise.reject();
+  try {
+    if('title' in updatedResource){
+      const titleExists = await Resource.query()
+        .where({ userId, title: req.body.title })
+        .whereNot({ id: resourceId })
+        .first();
+
+      if(titleExists){
+        const err = new Error('Resource title already exists');
+        err.status = 400;
+        throw err;
       }
-      return res.status(201).json(resource);
-    })
-    .catch(next);
+    }
+
+    const resource = await Resource.query()
+      .update(updatedResource)
+      .where({ id: resourceId, userId })
+      .returning('*')
+      .first();
+
+    if(!resource){
+      return next();
+    }
+
+    delete resource.userId;
+
+    if (resource.parent !== null) {
+      resource.parent = await Topic.query()
+        .select('id', 'title')
+        .where({ id: resource.parent })
+        .first();
+    }
+
+    return res.status(201).json(resource);
+  } catch(e) {
+    return next(e);
+  }
 });
 
 router.post('/', requiredFields(['title', 'parent', 'uri']), validateResource, appendResourceType, (req, res, next) => {
@@ -113,7 +139,7 @@ router.post('/', requiredFields(['title', 'parent', 'uri']), validateResource, a
     .then(resource => {
       if (resource) {
         const err = new Error('Resource with this title already exists');
-        err.status = 422;
+        err.status = 400;
         return Promise.reject(err);
       }
 

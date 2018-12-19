@@ -6,14 +6,14 @@ function validateFolder(req, res, next) {
       req.body.title = title.toString();
     } catch (e) {
       const err = new Error('Title is invalid.');
-      err.status = 422;
+      err.status = 400;
       return next(err);
     }
   }
 
   if ('title' in req.body && !title.trim()) {
     const err = new Error('Folder title is required');
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 

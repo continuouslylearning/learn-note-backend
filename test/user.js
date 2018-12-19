@@ -105,25 +105,25 @@ describe('USERS ENDPOINT', function(){
             .send({ ...newUser, email: existingEmail });
         })
         .then(res => {
-          expect(res).to.have.status(422);
+          expect(res).to.have.status(400);
         });
     });
 
-    it('should return 422 when password is less than 8 characters', function(){
+    it('should return 400 when password is less than 8 characters', function(){
       return chai.request(app)
         .post(USER_ENDPOINT)
         .send({ ...newUser, password: newUser.password.slice(0, 7)})
         .then(res => {
-          expect(res).to.have.status(422);
+          expect(res).to.have.status(400);
         });
     });
 
-    it('should return 422 when email is invalid', function(){
+    it('should return 400 when email is invalid', function(){
       return chai.request(app)
         .post(USER_ENDPOINT)
         .send({ ...newUser, email: 'invalid_email' })
         .then(res => {
-          expect(res).to.have.status(422);
+          expect(res).to.have.status(400);
         });
     });
 

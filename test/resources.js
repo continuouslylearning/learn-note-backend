@@ -22,6 +22,7 @@ const Resource = require('../models/resource');
 describe('RESOURCES API', function() {
   const RESOURCES_ENDPOINT = '/api/resources';
   const RESOURCE_PROPERTIES = ['id', 'title', 'parent', 'uri', 'type', 'completed', 'lastOpened'];
+  let bearerToken;
   let user;
   let userId;
   let token;
@@ -44,6 +45,7 @@ describe('RESOURCES API', function() {
         user = _user;
         userId = user.id;
         token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
+        bearerToken = `Bearer ${token}`;
         return Folder.query().insert(foldersData);
       })
       .then(() => Topic.query().insert(topicsData))
@@ -140,7 +142,6 @@ describe('RESOURCES API', function() {
         .where({ userId })
         .first()
         .then(resource => {
-          console.log(resource);
           resourceId = resource.id;
           return chai
             .request(app)
@@ -230,7 +231,7 @@ describe('RESOURCES API', function() {
         });
     });
 
-    it('should return 422 when the parent id is invalid', function() {
+    it('should return 400 when the parent id is invalid', function() {
       const parent = Math.floor(Math.max(1000000));
       const resource = {
         title: 'Resource title',
@@ -245,8 +246,109 @@ describe('RESOURCES API', function() {
         .send(resource)
         .set('Authorization', `Bearer ${token}`)
         .then(res => {
-          expect(res).to.have.status(422);
+          expect(res).to.have.status(400);
         });
+    });
+  });
+
+  describe('PUT /api/resources/:id', function() {
+  
+    const updatedResource = {
+      title: 'New Resource Title',
+      lastOpened: (new Date(Date.now())).toISOString()
+    };
+
+    it('should update the resource in the table', function() {
+      let resResource;
+      let resourceId;
+      return Resource.query()
+        .where({ userId })
+        .first()
+        .then(resource => {
+          resourceId = resource.id;
+          return chai
+            .request(app)
+            .put(`${RESOURCES_ENDPOINT}/${resourceId}`)
+            .send(updatedResource)
+            .set('Authorization', bearerToken);
+        })
+        .then(res => {
+          resResource = res.body;
+          expect(res).to.have.status(201);
+          expect(resResource).to.have.keys(RESOURCE_PROPERTIES);
+          expect(resResource.title).to.equal(updatedResource.title);
+          expect(resResource.lastOpened).to.equal(updatedResource.lastOpened);
+          return Resource.query()
+            .where({ userId, id: resourceId })
+            .first();
+        })
+        .then(dbResource => {
+          expect(dbResource.title).to.equal(updatedResource.title);
+          expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(updatedResource.lastOpened));
+          expect(new Date(dbResource.createdAt)).to.deep.equal(new Date(resResource.createdAt));
+          expect(new Date(dbResource.updatedAt)).to.deep.equal(new Date(resResource.updatedAt));
+        });
+    });
+
+    it('should return 401 when JWT is not provided', function() {
+      return Resource.query()
+        .where({ userId })
+        .first()
+        .then(resource => {
+          const resourceId = resource.id;
+          return chai
+            .request(app)
+            .put(`${RESOURCES_ENDPOINT}/${resourceId}`)
+            .send(updatedResource);
+        })
+        .then(res => {
+          expect(res).to.have.status(401);
+        });
+    });
+
+    it('should return 404 when params id does not exist', function() {
+      const id = Math.floor(Math.random() * 1000000);
+
+      return chai
+        .request(app)
+        .put(`${RESOURCES_ENDPOINT}/${id}`)
+        .send(updatedResource)
+        .set('Authorization', bearerToken)
+        .then(res => {
+          expect(res).to.have.status(404);
+        });
+    });
+
+    it('should reject requests with duplicate resource titles', async () => {
+      
+      const existingResource = await Resource
+        .query()
+        .where({ userId })
+        .first();
+
+      const id = existingResource.id;
+
+      const secondResource = await Resource
+        .query()
+        .where({ userId })
+        .whereNot({ id })
+        .first();
+      
+      const titleOfSecondResource = secondResource.title;
+
+      const updateWithDuplicateTitle = {
+        title: titleOfSecondResource,
+        lastOpened: new Date()
+      };
+
+      const response = await chai
+        .request(app)
+        .put(`${RESOURCES_ENDPOINT}/${id}`)
+        .send(updateWithDuplicateTitle)
+        .set('Authorization', bearerToken);
+
+      expect(response).to.have.status(400);
+
     });
   });
 
@@ -261,7 +363,7 @@ describe('RESOURCES API', function() {
           return chai
             .request(app)
             .delete(`${RESOURCES_ENDPOINT}/${resourceId}`)
-            .set('Authorization', `Bearer ${token}`);
+            .set('Authorization', bearerToken);
         })
         .then(res => {
           expect(res).to.have.status(204);

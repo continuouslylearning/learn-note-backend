@@ -9,14 +9,14 @@ function validateTopic(req, res, next) {
       req.body.title = title.toString();
     } catch (e) {
       const err = new Error('Title is invalid.');
-      err.status = 422;
+      err.status = 400;
       return next(err);
     }
   }
 
   if ('title' in req.body && !title.trim()) {
     const err = new Error('Title is required');
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 
@@ -25,7 +25,7 @@ function validateTopic(req, res, next) {
 
     if (Number.isNaN(req.body.parent)) {
       const err = new Error('Parent is invalid.');
-      err.status = 422;
+      err.status = 400;
       return next(err);
     }
   }
@@ -36,7 +36,7 @@ function validateTopic(req, res, next) {
       .then(folder => {
         if (!folder) {
           const err = new Error('Parent id is invalid');
-          err.status = 422;
+          err.status = 400;
           return next(err);
         }
         return next();

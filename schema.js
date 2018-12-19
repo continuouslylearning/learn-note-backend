@@ -76,7 +76,10 @@ function createResources(knex) {
         .references('id')
         .inTable('topics')
         .onDelete('CASCADE');
-      table.string('title').notNullable();
+      table
+        .string('title')
+        .unique()
+        .notNullable();
       table.string('uri').notNullable();
       table.enum('type', ['youtube', 'other']).notNullable();
       table

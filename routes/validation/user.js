@@ -17,7 +17,7 @@ function validateUser(req, res, next){
   const nonTrimmedFields = trimmedFields.find(field => field in req.body && (req.body[field].trim() !== req.body[field]));
   if(nonTrimmedFields){
     const err = new Error(`${nonTrimmedFields} cannot start or end with whitespace`);
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 
@@ -40,13 +40,13 @@ function validateUser(req, res, next){
       ? `${tooSmallField} must be at least ${fieldSizes[tooSmallField].min} characters long`
       : `${tooLargeField} must be at most ${fieldSizes[tooLargeField].max} characters long`;
     const err = new Error(message);
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 
   if(!email.match(EMAIL_PATTERN)){
     const err = new Error('Email is not valid');
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 

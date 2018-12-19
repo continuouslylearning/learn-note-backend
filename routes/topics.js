@@ -153,8 +153,9 @@ router.put('/:id', validateTopic, async (req, res, next) => {
       .returning('*')
       .first();
 
-    if (!topic) throw new Error();
-
+    if (!topic) {
+      return next();
+    }
     delete topic.userId;
 
     // If a parent exists, append it to the response
@@ -184,7 +185,7 @@ router.post('/', requiredFields(['title']), validateTopic, async (req, res, next
     if (topicExists) {
       const err = {
         message: 'Topic with this title already exists',
-        status: 422
+        status: 400
       };
       throw err;
     }
