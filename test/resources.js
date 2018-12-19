@@ -69,68 +69,77 @@ describe('RESOURCES API', function() {
     return dbDisconnect();
   });
 
-  describe('GET /api/resources', function() {
-    it('should return the correct resources', function() {
-      let resResources;
-      return chai
+  describe('GET /api/resources', async () => {
+
+    it('should return the correct resources', async () => {
+
+      const response = await chai
         .request(app)
         .get(RESOURCES_ENDPOINT)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          resResources = res.body;
-          expect(res).to.have.status(200);
-          resResources.forEach(resResource => {
-            expect(resResource).to.contain.keys(RESOURCE_PROPERTIES);
-          });
-          return Resource.query().where({ userId });
-        })
-        .then(dbResources => {
-          expect(dbResources.length).to.equal(resResources.length);
-          dbResources.forEach((dbResource, index) => {
-            const resResource = resResources[index];
-            expect(dbResource.title).to.equal(resResource.title);
-            expect(dbResource.parent).to.equal(resResource.parent.id);
-            expect(dbResource.type).to.equal(resResource.type);
-            expect(dbResource.uri).to.equal(resResource.uri);
-            expect(dbResource.completed).to.equal(resResource.completed);
-            expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
-          });
-        });
+        .set('Authorization', bearerToken);
+
+      expect(response).to.have.status(200);
+      const resResources = response.body;
+      resResources.forEach(resResource => {
+        expect(resResource).to.contain.keys(RESOURCE_PROPERTIES);
+      });
+
+      const dbResources = await Resource
+        .query()
+        .where({ userId });
+      
+      resResources.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+      dbResources.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+      expect(dbResources.length).to.equal(resResources.length);
+      dbResources.forEach((dbResource, index) => {
+        const resResource = resResources[index];
+        expect(dbResource.parent).to.equal(resResource.parent.id);
+        expect(dbResource.title).to.equal(resResource.title);
+        expect(dbResource.type).to.equal(resResource.type);
+        expect(dbResource.uri).to.equal(resResource.uri);
+        expect(dbResource.completed).to.equal(resResource.completed);
+        expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
+      });
     });
 
-    it('should return the correct resources with query arguments', function() {
-      let resResources;
-      return chai
+    it('should return the correct resources with query arguments', async () => {
+
+      const response = await chai
         .request(app)
         .get(RESOURCES_ENDPOINT)
         .query({ limit: 5, orderBy: 'lastOpened' })
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          resResources = res.body;
-          expect(res).to.have.status(200);
-          resResources.forEach(resResource => {
-            expect(resResource).to.contain.keys(RESOURCE_PROPERTIES);
-          });
-          return Resource.query()
-            .where({ userId })
-            .limit(5)
-            .orderBy('lastOpened', 'desc');
-        })
-        .then(dbResources => {
-          expect(dbResources.length).to.equal(resResources.length);
-          for (let i = 0; i < dbResources.length; i++) {
-            expect(dbResources[i].title).to.equal(resResources[i].title);
-          }
-        });
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(200);
+      const resResources = response.body;
+      resResources.forEach(resResource => {
+        expect(resResource).to.contain.keys(RESOURCE_PROPERTIES);
+      });
+
+      const dbResources = await Resource
+        .query()
+        .where({ userId })
+        .limit(5)
+        .orderBy('lastOpened', 'desc');
+
+      dbResources.forEach((dbResource, index) => {
+        const resResource = resResources[index];
+        expect(dbResource.parent).to.equal(resResource.parent.id);
+        expect(dbResource.title).to.equal(resResource.title);
+        expect(dbResource.type).to.equal(resResource.type);
+        expect(dbResource.uri).to.equal(resResource.uri);
+        expect(dbResource.completed).to.equal(resResource.completed);
+        expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
+      });
     });
 
-    it('should return 401 when JWT is missing', function() {
-      return chai
+    it('should return 401 when JWT is missing', async () => {
+
+      const response = await chai
         .request(app)
-        .get(RESOURCES_ENDPOINT)
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .get(RESOURCES_ENDPOINT);
+
+      expect(response).to.have.status(401);
     });
   });
 

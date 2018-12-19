@@ -18,7 +18,7 @@ const appendParent = (obj, id, title) => {
   } else obj.parent = null;
 };
 
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   // Configure ?notebooks
   const shouldSelectNotebooks = req.query.notebooks || false;
   // Configure ?resourceOrder
@@ -31,32 +31,35 @@ router.get('/', (req, res, next) => {
   const limit = req.query.limit;
 
   const userId = req.user.id;
-  return Folder.query()
-    .select(
-      'topics.id as id',
-      'topics.parent as parent',
-      'topics.title',
-      'topics.createdAt',
-      'topics.updatedAt',
-      'folders.title as folderTitle'
-    )
-    .modify(query => {
-      if (shouldSelectNotebooks) query.select('topics.notebook as notebook');
-      if (shouldSelectResourceOrder) query.select('topics.resourceOrder as resourceOrder');
-      if (shouldOrderByColumn) query.orderBy(shouldOrderByColumn, orderDirection);
-      if (limit) query.limit(limit);
-      return query;
-    })
-    .rightJoin('topics', 'folders.id', 'topics.parent')
-    .where({ 'topics.userId': userId })
-    .then(topics => {
-      topics.forEach(topic => {
-        appendParent(topic, topic.parent, topic.folderTitle);
-        delete topic.folderTitle;
-      });
-      return res.json(topics);
-    })
-    .catch(next);
+  
+  try {
+    const topics = await Topic.query()
+      .select(
+        'topics.id as id',
+        'topics.parent as parent',
+        'topics.title',
+        'topics.createdAt',
+        'topics.updatedAt',
+        'folders.title as folderTitle'
+      )
+      .modify(query => {
+        if (shouldSelectNotebooks) query.select('topics.notebook as notebook');
+        if (shouldSelectResourceOrder) query.select('topics.resourceOrder as resourceOrder');
+        if (shouldOrderByColumn) query.orderBy(shouldOrderByColumn, orderDirection);
+        if (limit) query.limit(limit);
+        return query;
+      })
+      .rightJoin('folders', 'folders.id', 'topics.parent')
+      .where({ 'topics.userId': userId });
+
+    topics.forEach(topic => {
+      topic.appendParent();
+    });
+  
+    return res.json(topics);
+  } catch(e) {
+    next(e);
+  }
 });
 
 router.get('/:id', (req, res, next) => {
@@ -210,20 +213,22 @@ router.post('/', requiredFields(['title']), validateTopic, async (req, res, next
   }
 });
 
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   const userId = req.user.id;
   const topicId = req.params.id;
 
-  Topic.query()
-    .delete()
-    .where({ userId, id: topicId })
-    .returning('*')
-    .first()
-    .then(topic => {
-      if (!topic) return Promise.reject();
-      return res.sendStatus(204);
-    })
-    .catch(next);
+  try {
+    const topic = await Topic.query()
+      .delete()
+      .where({ userId, id: topicId })
+      .returning('*')
+      .first();
+    
+    if(!topic) return next();
+    return res.sendStatus(204);
+  } catch(e) {
+    next(e);
+  }
 });
 
 module.exports = router;
