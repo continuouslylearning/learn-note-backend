@@ -255,11 +255,12 @@ describe('RESOURCES API', function() {
   
     const updatedResource = {
       title: 'New Resource Title',
-      lastOpened: (new Date(Date.now())).toISOString(),
+      lastOpened: (new Date()).toISOString(),
       completed: true
     };
 
     it('should update the resource in the table', async () =>  {
+
       const existingResource = await Resource
         .query()
         .where({ userId })
@@ -322,7 +323,7 @@ describe('RESOURCES API', function() {
       expect(response).to.have.status(404);
     });
 
-    it('should reject requests with duplicate resource titles', async () => {
+    it('should reject requests with duplicate resource titles within same topic', async () => {
       
       const existingResource = await Resource
         .query()
@@ -330,10 +331,11 @@ describe('RESOURCES API', function() {
         .first();
 
       const id = existingResource.id;
+      const parentTopicId = existingResource.parent;
 
       const secondResource = await Resource
         .query()
-        .where({ userId })
+        .where({ userId, parent: parentTopicId })
         .whereNot({ id })
         .first();
       
@@ -353,6 +355,42 @@ describe('RESOURCES API', function() {
       expect(response).to.have.status(400);
 
     });
+
+    it('should not reject requests with duplicate resource titles not within the same topic', async () => {
+      
+      const existingResource = await Resource
+        .query()
+        .where({ userId })
+        .first();
+
+      const id = existingResource.id;
+      const parentTopicId = existingResource.parent;
+
+      const secondResource = await Resource
+        .query()
+        .where({ userId })
+        .whereNot({ id, parent: parentTopicId })
+        .first();
+      
+      const titleOfSecondResource = secondResource.title;
+
+      const updateWithDuplicateTitle = {
+        title: titleOfSecondResource,
+        lastOpened: new Date(),
+        completed: true
+      };
+
+      const response = await chai
+        .request(app)
+        .put(`${RESOURCES_ENDPOINT}/${id}`)
+        .send(updateWithDuplicateTitle)
+        .set('Authorization', bearerToken);
+
+      expect(response).to.have.status(201);
+
+    });
+
+
   });
 
   describe('DELETE /api/resources/:id', function() {
