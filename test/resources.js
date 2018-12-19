@@ -255,68 +255,71 @@ describe('RESOURCES API', function() {
   
     const updatedResource = {
       title: 'New Resource Title',
-      lastOpened: (new Date(Date.now())).toISOString()
+      lastOpened: (new Date(Date.now())).toISOString(),
+      completed: true
     };
 
-    it('should update the resource in the table', function() {
-      let resResource;
-      let resourceId;
-      return Resource.query()
+    it('should update the resource in the table', async () =>  {
+      const existingResource = await Resource
+        .query()
         .where({ userId })
-        .first()
-        .then(resource => {
-          resourceId = resource.id;
-          return chai
-            .request(app)
-            .put(`${RESOURCES_ENDPOINT}/${resourceId}`)
-            .send(updatedResource)
-            .set('Authorization', bearerToken);
-        })
-        .then(res => {
-          resResource = res.body;
-          expect(res).to.have.status(201);
-          expect(resResource).to.have.keys(RESOURCE_PROPERTIES);
-          expect(resResource.title).to.equal(updatedResource.title);
-          expect(resResource.lastOpened).to.equal(updatedResource.lastOpened);
-          return Resource.query()
-            .where({ userId, id: resourceId })
-            .first();
-        })
-        .then(dbResource => {
-          expect(dbResource.title).to.equal(updatedResource.title);
-          expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(updatedResource.lastOpened));
-          expect(new Date(dbResource.createdAt)).to.deep.equal(new Date(resResource.createdAt));
-          expect(new Date(dbResource.updatedAt)).to.deep.equal(new Date(resResource.updatedAt));
-        });
+        .first();
+
+      const resourceId = existingResource.id;
+
+      const response = await chai
+        .request(app)
+        .put(`${RESOURCES_ENDPOINT}/${resourceId}`)
+        .send(updatedResource)
+        .set('Authorization', bearerToken);
+
+      const resResource = response.body;
+      expect(response).to.have.status(201);
+      expect(resResource).to.have.keys(RESOURCE_PROPERTIES);
+      expect(resResource.completed).to.equal(updatedResource.completed);
+      expect(resResource.lastOpened).to.equal(updatedResource.lastOpened);
+      expect(resResource.title).to.equal(updatedResource.title);
+
+      const dbResource = await Resource
+        .query()
+        .where({ userId, id: resourceId })
+        .first();
+
+      expect(dbResource.title).to.equal(updatedResource.title);
+      expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(updatedResource.lastOpened));
+      expect(dbResource.completed).to.equal(resResource.completed);
+      expect(dbResource.parent).to.equal(resResource.parent && resResource.parent.id);
+      expect(dbResource.type).to.equal(resResource.type);
+      expect(dbResource.uri).to.equal(resResource.uri);
     });
 
-    it('should return 401 when JWT is not provided', function() {
-      return Resource.query()
+    it('should return 401 when JWT is not provided', async () => {
+
+      const existingResource = await Resource
+        .query()
         .where({ userId })
-        .first()
-        .then(resource => {
-          const resourceId = resource.id;
-          return chai
-            .request(app)
-            .put(`${RESOURCES_ENDPOINT}/${resourceId}`)
-            .send(updatedResource);
-        })
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .first();
+      
+      const resourceId = existingResource.id;
+
+      const response = await chai
+        .request(app)
+        .put(`${RESOURCES_ENDPOINT}/${resourceId}`)
+        .send(updatedResource);
+      
+      expect(response).to.have.status(401);
     });
 
-    it('should return 404 when params id does not exist', function() {
+    it('should return 404 when params id does not exist', async () => {
       const id = Math.floor(Math.random() * 1000000);
 
-      return chai
+      const response = await chai
         .request(app)
         .put(`${RESOURCES_ENDPOINT}/${id}`)
         .send(updatedResource)
-        .set('Authorization', bearerToken)
-        .then(res => {
-          expect(res).to.have.status(404);
-        });
+        .set('Authorization', bearerToken);
+
+      expect(response).to.have.status(404);
     });
 
     it('should reject requests with duplicate resource titles', async () => {
