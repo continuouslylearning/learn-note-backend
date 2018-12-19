@@ -18,13 +18,15 @@ const User = require('../models/user');
 const Folder = require('../models/folder');
 const Topic = require('../models/topic');
 
-describe('TOPICS API', function() {
+describe.only('TOPICS API', function() {
   const TOPICS_ENDPOINT = '/api/topics';
-  const TOPIC_PROPERTIES = ['id', 'title', 'parent', 'notebook', 'resourceOrder', 'createdAt', 'updatedAt'];
+  const allTopicProperties = ['id', 'title', 'parent', 'notebook', 'resourceOrder', 'createdAt', 'updatedAt'];
+  const topicPropertiesWithoutQueryParams = ['id', 'title', 'parent', 'createdAt', 'updatedAt'];
   let user;
   let userId;
   let token;
   let knex;
+  let bearerToken;
 
   before(function() {
     this.timeout(4000);
@@ -43,6 +45,7 @@ describe('TOPICS API', function() {
         user = _user;
         userId = user.id;
         token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
+        bearerToken = `Bearer ${token}`;
         return Folder.query().insert(foldersData);
       })
       .then(() => Topic.query().insert(topicsData))
@@ -61,43 +64,101 @@ describe('TOPICS API', function() {
     return dbDisconnect();
   });
 
-  describe('GET /api/topics', function() {
-    it('should return the correct topics', function() {
-      let resTopics;
-      return chai
+  describe('GET /api/topics', async () => {
+
+    it('should return the correct topics', async () => {
+      const response = await chai
         .request(app)
         .get(TOPICS_ENDPOINT)
-        .query({ notebooks: true, resourceOrder: true })
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          resTopics = res.body;
-          expect(res).to.have.status(200);
-          resTopics.forEach(resTopic => {
-            expect(resTopic).to.have.keys(TOPIC_PROPERTIES);
-          });
-          return Topic.query().where({ userId });
-        })
-        .then(dbTopics => {
-          expect(dbTopics.length).to.equal(resTopics.length);
-          dbTopics.forEach((dbTopic, index) => {
-            const resTopic = resTopics[index];
-            expect(dbTopic.title).to.equal(resTopic.title);
-            expect(dbTopic.parent).to.equal(resTopic.parent.id);
-            // expect(dbTopic.notebook).to.equal(resTopic.notebook);
-            expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
-            expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
-          });
-        });
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(200);
+      const resTopics = response.body;
+      resTopics.forEach(resTopic => {
+        expect(resTopic).to.have.keys(topicPropertiesWithoutQueryParams);
+        expect(resTopic).to.not.have.keys(['notebook', 'resourceOrder']);
+      });
+
+      const dbTopics = await Topic
+        .query()
+        .where({ userId });
+
+      expect(dbTopics.length).to.equal(resTopics.length);
+      dbTopics.forEach((dbTopic, index) => {
+        const resTopic = resTopics[index];
+        expect(dbTopic.parent).to.equal(resTopic.parent.id);
+        expect(dbTopic.title).to.equal(resTopic.title);
+        expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
+        expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
+      }); 
     });
 
-    it('should return 401 when JWT is missing', function() {
-      return chai
+    it('should return topics with notebook fields with notebooks query argument', async () => {
+
+      const response = await chai
         .request(app)
         .get(TOPICS_ENDPOINT)
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .query({ notebooks: true })
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(200);
+      const resTopics = response.body;
+      resTopics.forEach(topic => {
+        expect(topic).to.contain.keys(topicPropertiesWithoutQueryParams.concat('notebook'));
+      });
+      
+      const dbTopics = await Topic
+        .query()
+        .where({ userId });
+
+      expect(dbTopics.length).to.equal(resTopics.length);
+      dbTopics.forEach((dbTopic, index) => {
+        const resTopic = resTopics[index];
+        expect(dbTopic.parent).to.equal(resTopic.parent.id);
+        expect(dbTopic.title).to.equal(resTopic.title);
+        expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
+        expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
+        expect(JSON.stringify(dbTopic.notebook)).to.equal(JSON.stringify(resTopic.notebook));
+      });
     });
+
+    it('should return topics with resourceOrder fields with resourceOrder query argument', async () => {
+
+      const response = await chai
+        .request(app)
+        .get(TOPICS_ENDPOINT)
+        .query({ resourceOrder: true })
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(200);
+      const resTopics = response.body;
+      resTopics.forEach(topic => {
+        expect(topic).to.include.keys(topicPropertiesWithoutQueryParams.concat('resourceOrder'));
+      });
+      
+      const dbTopics = await Topic
+        .query()
+        .where({ userId });
+
+      expect(dbTopics.length).to.equal(resTopics.length);
+      dbTopics.forEach((dbTopic, index) => {
+        const resTopic = resTopics[index];
+        expect(dbTopic.parent).to.equal(resTopic.parent.id);
+        expect(dbTopic.title).to.equal(resTopic.title);
+        expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
+        expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
+        expect(JSON.stringify(dbTopic.resourceOrder)).to.equal(JSON.stringify(resTopic.resourceOrder));
+      });
+    });
+
+    it('should return 401 when JWT is missing', async () => {
+      const response = await chai
+        .request(app)
+        .get(TOPICS_ENDPOINT);
+
+      expect(response).to.have.status(401);
+    });
+
   });
 
   describe('POST /api/topics', function() {
@@ -118,7 +179,7 @@ describe('TOPICS API', function() {
           const topicId = resTopic.id;
           expect(res).to.have.status(201);
           expect(resTopic.parent).to.be.null;
-          expect(resTopic).to.have.keys(TOPIC_PROPERTIES);
+          expect(resTopic).to.have.keys(allTopicProperties);
           expect(resTopic.title).to.equal(newTopic.title);
           return Topic.query()
             .where({ id: topicId, userId })
@@ -146,7 +207,7 @@ describe('TOPICS API', function() {
           const topicId = resTopic.id;
           expect(res).to.have.status(201);
           expect(resTopic.parent).to.be.null;
-          expect(resTopic).to.have.keys(TOPIC_PROPERTIES);
+          expect(resTopic).to.have.keys(allTopicProperties);
           expect(resTopic.title).to.equal(newTopic.title);
           return Topic.query()
             .where({ id: topicId, userId })
@@ -213,7 +274,7 @@ describe('TOPICS API', function() {
         .then(res => {
           resTopic = res.body;
           expect(res).to.have.status(201);
-          expect(resTopic).to.have.keys(TOPIC_PROPERTIES);
+          expect(resTopic).to.have.keys(allTopicProperties);
           expect(resTopic.title).to.equal(updatedTopic.title);
           expect(resTopic.parent.id).to.equal(updatedTopic.parent);
           return Topic.query()
