@@ -171,7 +171,7 @@ describe('TOPICS API', function() {
         });
     });
 
-    it('should return 422 when the parent id is invalid', function() {
+    it('should return 400 when the parent id is invalid', function() {
       const parent = Math.floor(Math.max(1000000));
       const topic = {
         title: 'Git',
@@ -184,7 +184,7 @@ describe('TOPICS API', function() {
         .send(topic)
         .set('Authorization', `Bearer ${token}`)
         .then(res => {
-          expect(res).to.have.status(422);
+          expect(res).to.have.status(400);
         });
     });
   });
@@ -215,7 +215,7 @@ describe('TOPICS API', function() {
           expect(res).to.have.status(201);
           expect(resTopic).to.have.keys(TOPIC_PROPERTIES);
           expect(resTopic.title).to.equal(updatedTopic.title);
-          expect(resTopic.parent).to.equal(updatedTopic.parent);
+          expect(resTopic.parent.id).to.equal(updatedTopic.parent);
           return Topic.query()
             .where({ userId, id: topicId })
             .first();

@@ -13,7 +13,7 @@ router.post('/', validateUser, (req, res, next) => {
     .then(user => {
       if (user) {
         const err = new Error('User with this email already exists');
-        err.status = 422;
+        err.status = 400;
         return Promise.reject(err);
       }
       return User.hashPassword(password);

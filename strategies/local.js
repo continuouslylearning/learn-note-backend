@@ -4,7 +4,7 @@ module.exports = function localAuth(req, res, next){
   const { email, password } = req.body;
   if(!email || !password){
     const err = new Error('Missing email or password');
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 

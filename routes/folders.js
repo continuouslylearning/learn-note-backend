@@ -54,7 +54,7 @@ router.post('/', requiredFields(['title']), validateFolder, (req, res, next) => 
     .then(folder => {
       if (folder) {
         const err = new Error('Folder with this title already exists');
-        err.status = 422;
+        err.status = 400;
         return Promise.reject(err);
       }
       return Folder.query()

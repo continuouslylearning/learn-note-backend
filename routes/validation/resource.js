@@ -28,20 +28,20 @@ function validateResource(req, res, next) {
       req.body.title = title.toString();
     } catch (e) {
       const err = new Error('Title is invalid.');
-      err.status = 422;
+      err.status = 400;
       return next(err);
     }
   }
 
   if ('title' in req.body && !title.trim()) {
     const err = new Error('Title is required');
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 
   if ('uri' in req.body && !isValidUri(req.body.uri)) {
     const err = new Error('Uri is invalid.');
-    err.status = 422;
+    err.status = 400;
     return next(err);
   }
 
@@ -50,7 +50,7 @@ function validateResource(req, res, next) {
 
     if (Number.isNaN(req.body.parent)) {
       const err = new Error('Parent is invalid.');
-      err.status = 422;
+      err.status = 400;
       return next(err);
     }
   }
@@ -61,7 +61,7 @@ function validateResource(req, res, next) {
       .then(topic => {
         if (!topic) {
           const err = new Error('Topic id not found.');
-          err.status = 422;
+          err.status = 400;
           return next(err);
         }
         return next();
