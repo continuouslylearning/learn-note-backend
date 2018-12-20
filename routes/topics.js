@@ -140,7 +140,7 @@ router.put('/:id', validateTopic, async (req, res, next) => {
   const userId = req.user.id;
   const topicId = req.params.id;
 
-  const updateableFields = ['title', 'parent', 'lastOpened', 'notebook', 'resourceOrder'];
+  const updateableFields = ['title', 'parent', 'notebook', 'resourceOrder'];
   const updatedTopic = {};
   updateableFields.forEach(field => {
     if (field in req.body) {
@@ -150,6 +150,22 @@ router.put('/:id', validateTopic, async (req, res, next) => {
   });
 
   try {
+
+    if('title' in req.body){
+      const topicWithSameName = await Topic
+        .query()
+        .where({ userId, title: req.body.title })
+        .whereNot({ id: topicId })
+        .first();
+      
+      if(topicWithSameName){
+        throw {
+          message: 'Topic with this title already exists',
+          status: 400
+        };
+      }
+    }
+
     const topic = await Topic.query()
       .update(updatedTopic)
       .where({ userId, id: topicId })
