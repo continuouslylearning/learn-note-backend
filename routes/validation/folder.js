@@ -5,7 +5,7 @@ function validateFolder(req, res, next) {
     try {
       req.body.title = title.toString();
     } catch (e) {
-      const err = new Error('Title is invalid.');
+      const err = new Error('Folder title must be a string');
       err.status = 400;
       return next(err);
     }
