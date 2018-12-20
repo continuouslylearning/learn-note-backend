@@ -26,13 +26,13 @@ describe('FOLDERS API', async () => {
   let bearerToken;
   let knex;
 
-  before(function() {
+  before(async function() {
     this.timeout(5000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
-    return dropTables(knex)
-      .then(() => createTables(knex));
+    await dropTables(knex);
+    await createTables(knex);
   });
 
   beforeEach(async () => {
@@ -181,7 +181,6 @@ describe('FOLDERS API', async () => {
       
       expect(res).to.have.status(400);
     });
-
 
   });
 

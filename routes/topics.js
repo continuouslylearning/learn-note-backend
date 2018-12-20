@@ -49,7 +49,7 @@ router.get('/', async (req, res, next) => {
         if (limit) query.limit(limit);
         return query;
       })
-      .rightJoin('folders', 'folders.id', 'topics.parent')
+      .leftJoin('folders', 'folders.id', 'topics.parent')
       .where({ 'topics.userId': userId });
 
     topics.forEach(topic => {
