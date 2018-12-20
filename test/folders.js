@@ -24,6 +24,7 @@ describe('FOLDERS API', function(){
   let user;
   let userId;
   let token;
+  let bearerToken;
   let knex;
 
   before(function(){
@@ -45,6 +46,7 @@ describe('FOLDERS API', function(){
         user = _user;
         userId = user.id;
         token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
+        bearerToken = `Bearer ${token}`;
         return Folder
           .query()
           .insert(foldersData);
@@ -148,9 +150,9 @@ describe('FOLDERS API', function(){
     });
   });
 
-  describe('PUT /folder/:id', function(){
+  describe.only('PUT /folder/:id', function(){
     const updatedFolder = {
-      title: 'React/Redux',
+      title: 'A unique folder name',
       userId
     };
 
@@ -187,36 +189,60 @@ describe('FOLDERS API', function(){
     });
 
     
-    it('should return 401 when JWT is not provided', function(){
-      return Folder
+    it('should return 401 when JWT is not provided', async () => {
+      const folder = await Folder
         .query()
         .where({ userId })
-        .first()
-        .then(folder => {
-          const folderId = folder.id;
-          return chai.request(app)
-            .put(`${FOLDERS_ENDPOINT}/${folderId}`)
-            .send(updatedFolder);
-        })
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .first();
+      
+      const response = await chai
+        .request(app)
+        .put(`${FOLDERS_ENDPOINT}/${folder.id}`)
+        .send(updatedFolder);
+      
+      expect(response).to.have.status(401);
     });
 
-    it('should return 404 when params id does not exist', function(){
+    it('should return 404 when params id does not exist', async () => {
       const id = Math.floor(Math.random()*1000000);
       const updatedFolder = {
         title: 'React/Redux',
         userId
       };
  
-      return chai.request(app)
+      const res = await chai
+        .request(app)
         .put(`${FOLDERS_ENDPOINT}/${id}`)
         .send(updatedFolder)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          expect(res).to.have.status(404);
-        });
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(res).to.have.status(404);
+    });
+
+    it('should reject PUT requests with a duplicate folder name', async () => {
+
+      const existingFolder = await Folder
+        .query()
+        .where({ userId })
+        .first();
+
+      const id = existingFolder.id;
+
+      const folderWithDuplicatedName = await Folder
+        .query()
+        .where({ userId })
+        .whereNot({ id })
+        .first();
+      
+      const response = await chai
+        .request(app)
+        .put(`${FOLDERS_ENDPOINT}/${id}`)
+        .send({
+          title: folderWithDuplicatedName.title
+        })
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(400);
     });
   });
 

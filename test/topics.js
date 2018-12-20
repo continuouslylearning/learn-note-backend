@@ -18,7 +18,7 @@ const User = require('../models/user');
 const Folder = require('../models/folder');
 const Topic = require('../models/topic');
 
-describe.only('TOPICS API', function() {
+describe('TOPICS API', function() {
   const TOPICS_ENDPOINT = '/api/topics';
   const allTopicProperties = ['id', 'title', 'parent', 'notebook', 'resourceOrder', 'createdAt', 'updatedAt'];
   const topicPropertiesWithoutQueryParams = ['id', 'title', 'parent', 'createdAt', 'updatedAt'];
@@ -93,7 +93,7 @@ describe.only('TOPICS API', function() {
       }); 
     });
 
-    it('should return topics with notebook fields with notebooks query argument', async () => {
+    it('notebooks query argument should return topics with notebook field', async () => {
 
       const response = await chai
         .request(app)
@@ -122,7 +122,7 @@ describe.only('TOPICS API', function() {
       });
     });
 
-    it('should return topics with resourceOrder fields with resourceOrder query argument', async () => {
+    it('resourceOrder query argument should return topics with resourceOrder field', async () => {
 
       const response = await chai
         .request(app)
@@ -148,6 +148,37 @@ describe.only('TOPICS API', function() {
         expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
         expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
         expect(JSON.stringify(dbTopic.resourceOrder)).to.equal(JSON.stringify(resTopic.resourceOrder));
+      });
+    });
+
+    it('limit query argument should apply limit to topics', async () => {
+
+      const limit = Math.floor(Math.random()*10);
+
+      const response = await chai
+        .request(app)
+        .get(TOPICS_ENDPOINT)
+        .query({ limit })
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(200);
+      const resTopics = response.body;
+      resTopics.forEach(topic => {
+        expect(topic).to.include.keys(topicPropertiesWithoutQueryParams);
+      });
+      
+      const dbTopics = await Topic
+        .query()
+        .where({ userId })
+        .limit(limit) ;
+
+      expect(dbTopics.length).to.equal(resTopics.length);
+      dbTopics.forEach((dbTopic, index) => {
+        const resTopic = resTopics[index];
+        expect(dbTopic.parent).to.equal(resTopic.parent.id);
+        expect(dbTopic.title).to.equal(resTopic.title);
+        expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
+        expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
       });
     });
 
@@ -248,6 +279,26 @@ describe.only('TOPICS API', function() {
           expect(res).to.have.status(400);
         });
     });
+
+    it('should return 400 when title is missing', async () => {
+      const parentFolder = await Folder
+        .query()
+        .where({ userId })
+        .first();
+      
+      const parent = parentFolder.id;
+      const requestWithMissingTitle = {
+        parent
+      };
+
+      const response = await chai
+        .request(app)
+        .post(TOPICS_ENDPOINT)
+        .send(requestWithMissingTitle)
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(400);
+    });
   });
 
   describe('PUT /api/topics/:id', function() {
@@ -320,53 +371,54 @@ describe.only('TOPICS API', function() {
     });
   });
 
-  describe('DELETE /api/topics/:id', function() {
-    it('should remove the topic from the table', function() {
-      let topicId;
-      return Topic.query()
+  describe('DELETE /api/topics/:id', async () => {
+    it('should remove the topic from the table', async () => {
+      const topic = await Topic
+        .query()
         .where({ userId })
-        .first()
-        .then(topic => {
-          topicId = topic.id;
-          return chai
-            .request(app)
-            .delete(`${TOPICS_ENDPOINT}/${topicId}`)
-            .set('Authorization', `Bearer ${token}`);
-        })
-        .then(res => {
-          expect(res).to.have.status(204);
-          return Topic.query()
-            .where({ id: topicId, userId })
-            .first();
-        })
-        .then(topic => {
-          expect(topic).to.be.undefined;
-        });
+        .first();
+      
+      const topicId = topic.id;
+
+      const res = await chai
+        .request(app)
+        .delete(`${TOPICS_ENDPOINT}/${topicId}`)
+        .set('Authorization', bearerToken);
+
+      expect(res).to.have.status(204);
+      
+      const topicAfterDeleteRequest = await Topic
+        .query()
+        .where({ id: topicId, userId })
+        .first();
+
+      expect(topicAfterDeleteRequest).to.be.undefined;
     });
 
-    it('should return 401 when JWT is not provided', function() {
-      return Topic.query()
+    it('should return 401 when JWT is not provided', async () => {
+      const topic = await Topic
+        .query()
         .where({ userId })
-        .first()
-        .then(topic => {
-          const topicId = topic.id;
-          return chai.request(app).delete(`${TOPICS_ENDPOINT}/${topicId}`);
-        })
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .first();
+      
+      const topicId = topic.id;
+
+      const response = await chai
+        .request(app)
+        .delete(`${TOPICS_ENDPOINT}/${topicId}`);
+      
+      expect(response).to.have.status(401);
     });
 
-    it('should return 404 when params id does not exist', function() {
+    it('should return 404 when params id does not exist', async () => {
       const id = Math.floor(Math.random() * 1000000);
 
-      return chai
+      const response = await chai
         .request(app)
         .delete(`${TOPICS_ENDPOINT}/${id}`)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          expect(res).to.have.status(404);
-        });
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(404);
     });
   });
 });
