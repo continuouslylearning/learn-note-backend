@@ -159,9 +159,9 @@ router.post(
 
     try {
       const resourceWithSameName = await Resource.query()
-        .where({ userId, title })
+        .where({ userId, title, parent })
         .first();
-
+      
       if (resourceWithSameName) {
         throw {
           message: 'Resource with this title already exists',

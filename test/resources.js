@@ -29,7 +29,7 @@ describe('RESOURCES API', async () => {
   let knex;
 
   before(async function() {
-    this.timeout(10000);
+    this.timeout(5000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
@@ -132,7 +132,6 @@ describe('RESOURCES API', async () => {
     });
 
     it('should return 401 when JWT is missing', async () => {
-
       const response = await chai
         .request(app)
         .get(RESOURCES_ENDPOINT);
@@ -141,104 +140,115 @@ describe('RESOURCES API', async () => {
     });
   });
 
-  describe('GET /api/resources/:id', function() {
-    it('should return the correct resources', function() {
-      let resResource;
-      let resourceId;
-      return Resource.query()
+  describe('GET /api/resources/:id', async () => {
+    it('should return the correct resources', async () => {
+
+      let dbResource = await Resource
+        .query()
         .where({ userId })
-        .first()
-        .then(resource => {
-          resourceId = resource.id;
-          return chai
-            .request(app)
-            .get(`${RESOURCES_ENDPOINT}/${resourceId}`)
-            .set('Authorization', `Bearer ${token}`);
-        })
-        .then(res => {
-          expect(res).to.have.status(200);
-          resResource = res.body;
-          expect(resResource).to.contain.keys(RESOURCE_PROPERTIES);
-        });
-    });
-
-    it('should return 401 when JWT is missing', function() {
-      return chai
+        .first();
+    
+      const res = await chai
         .request(app)
-        .get(RESOURCES_ENDPOINT)
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .get(`${RESOURCES_ENDPOINT}/${dbResource.id}`)
+        .set('Authorization', bearerToken);
+      
+      dbResource = await Resource
+        .query()
+        .where({ userId, id: dbResource.id })
+        .first();
+
+      const resResource = res.body;
+      expect(res).to.have.status(200);
+      expect(resResource).to.contain.keys(RESOURCE_PROPERTIES);
+      expect(resResource.completed).to.equal(dbResource.completed);
+      expect(new Date(resResource.lastOpened)).to.deep.equal(new Date(dbResource.lastOpened));
+      expect(resResource.parent.id).to.equal(dbResource.parent);
+      expect(resResource.title).to.equal(dbResource.title);
+      expect(resResource.type).to.equal(dbResource.type);
+      expect(resResource.uri).to.equal(dbResource.uri);
     });
 
-    it('should return 404 when the topic id is non-existent', function() {
+    it('should return 401 when JWT is missing', async () => {
+      const res = await chai
+        .request(app)
+        .get(RESOURCES_ENDPOINT);
+      
+      expect(res).to.have.status(401);
+    });
+
+    it('should return 404 when the topic id is non-existent', async () => {
       const topicId = Math.floor(Math.random() * 100000);
 
-      return chai
+      const res = await chai
         .request(app)
         .get(`${RESOURCES_ENDPOINT}/${topicId}`)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          expect(res).to.have.status(404);
-        });
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(404);
     });
   });
 
-  describe('POST /api/resources', function() {
+  describe('POST /api/resources', async () => {
     const newResource = {
       title: 'Resource title',
       parent: 4000,
       uri: 'https://www.youtube.com/watch?v=vEROU2XtPR8',
-      userId,
       type: 'youtube'
     };
 
-    it('should insert topic into table when valid parent is given', function() {
-      let resResource;
-
-      return chai
-        .request(app)
-        .post(RESOURCES_ENDPOINT)
-        .set('Authorization', `Bearer ${token}`)
-        .send(newResource)
-        .then(res => {
-          resResource = res.body;
-          const resourceId = resResource.id;
-          expect(res).to.have.status(201);
-          expect(resResource).to.have.keys(RESOURCE_PROPERTIES);
-          expect(resResource.parent).to.equal(newResource.parent);
-          expect(resResource.title).to.equal(newResource.title);
-          expect(resResource.type).to.equal(resResource.type);
-          expect(resResource.uri).to.equal(
-            newResource.type === 'youtube' ? newResource.uri.split('v=')[1].slice(0, 11) : newResource.uri
-          );
-          return Resource.query()
-            .where({ id: resourceId })
-            .first();
-        })
-        .then(dbResource => {
-          expect(dbResource.title).to.equal(resResource.title);
-          expect(dbResource.parent).to.equal(resResource.parent);
-          expect(dbResource.type).to.equal(resResource.type);
-          expect(dbResource.uri).to.equal(
-            newResource.type === 'youtube' ? newResource.uri.split('v=')[1].slice(0, 11) : newResource.uri
-          );
-          expect(dbResource.completed).to.equal(resResource.completed);
-          expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
-        });
+    beforeEach(async() => {
+      newResource.parent = (await Topic
+        .query()
+        .select('id')
+        .where({ userId })
+        .first()
+      ).id;
     });
 
-    it('should return 401 when JWT is missing', function() {
-      return chai
+    it('should insert topic into table when valid parent is given', async () => {
+      const res = await chai
         .request(app)
         .post(RESOURCES_ENDPOINT)
-        .send(newResource)
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .set('Authorization', bearerToken)
+        .send(newResource);
+      
+      const resResource = res.body;
+      const resourceId = resResource.id;
+      expect(res).to.have.status(201);
+      expect(resResource).to.have.keys(RESOURCE_PROPERTIES);
+      expect(resResource.parent).to.equal(newResource.parent);
+      expect(resResource.title).to.equal(newResource.title);
+      expect(resResource.type).to.equal(resResource.type);
+      expect(resResource.uri).to.equal(
+        newResource.type === 'youtube' ? newResource.uri.split('v=')[1].slice(0, 11) : newResource.uri
+      );
+      
+      const dbResource = await Resource
+        .query()
+        .where({ id: resourceId })
+        .first();
+
+      expect(dbResource.title).to.equal(resResource.title);
+      expect(dbResource.parent).to.equal(resResource.parent);
+      expect(dbResource.type).to.equal(resResource.type);
+      expect(dbResource.uri).to.equal(
+        newResource.type === 'youtube' ? newResource.uri.split('v=')[1].slice(0, 11) : newResource.uri
+      );
+      expect(dbResource.completed).to.equal(resResource.completed);
+      expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
     });
 
-    it('should return 400 when the parent id is invalid', function() {
+    it('should return 401 when JWT is missing', async () => {
+      const res = await chai
+        .request(app)
+        .post(RESOURCES_ENDPOINT)
+        .send(newResource);
+
+      expect(res).to.have.status(401);
+    });
+
+    it('should return 400 when the parent id is invalid', async () => {
       const parent = Math.floor(Math.max(1000000));
       const resource = {
         title: 'Resource title',
@@ -247,18 +257,93 @@ describe('RESOURCES API', async () => {
         type: 'youtube'
       };
 
-      return chai
+      const res = await chai
         .request(app)
         .post(RESOURCES_ENDPOINT)
         .send(resource)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          expect(res).to.have.status(400);
-        });
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(400);
+    });
+
+    it('should return 400 for duplicate resource title within the same topic', async () => {
+      const resourceWithDuplicatedTitle = await Resource
+        .query()
+        .where({ userId, parent: newResource.parent })
+        .first();
+      
+      const res = await chai
+        .request(app)
+        .post(RESOURCES_ENDPOINT)
+        .send({ 
+          ...newResource, 
+          title: resourceWithDuplicatedTitle.title
+        })
+        .set('Authorization', bearerToken);
+
+      expect(res).to.have.status(400);
+    });
+
+    it('should return 201 for duplicate resource title not within the same topic', async () => {
+      const resourceWithDuplicatedTitle = await Resource
+        .query()
+        .where({ userId })
+        .whereNot({ parent: newResource.parent })
+        .first();
+      
+      const res = await chai
+        .request(app)
+        .post(RESOURCES_ENDPOINT)
+        .send({ 
+          ...newResource, 
+          title: resourceWithDuplicatedTitle.title
+        })
+        .set('Authorization', bearerToken);
+
+      expect(res).to.have.status(201);
+    });
+
+    it('should return 400 when title field is missing', async () => {
+      const res = await chai
+        .request(app)
+        .post(RESOURCES_ENDPOINT)
+        .send({ 
+          parent: 4000,
+          uri: 'https://www.youtube.com/watch?v=vEROU2XtPR8',
+          type: 'youtube'
+        })
+        .set('Authorization', bearerToken);
+      expect(res).to.have.status(400);
+    });
+
+    it('should return 400 when uri is missing', async () => {
+      const res = await chai
+        .request(app)
+        .post(RESOURCES_ENDPOINT)
+        .send({ 
+          title: 'Resource title',
+          parent: 4000,
+          type: 'other'
+        })
+        .set('Authorization', bearerToken);
+      expect(res).to.have.status(400);
+    });
+
+    it('should return 400 when parent field is missing', async () => {
+      const res = await chai
+        .request(app)
+        .post(RESOURCES_ENDPOINT)
+        .send({ 
+          title: 'Resource title',
+          uri: 'https://www.youtube.com/watch?v=vEROU2XtPR8',
+          type: 'other'
+        })
+        .set('Authorization', bearerToken);
+      expect(res).to.have.status(400);
     });
   });
 
-  describe('PUT /api/resources/:id', function() {
+  describe('PUT /api/resources/:id', async () => {
   
     const updatedResource = {
       title: 'New Resource Title',
@@ -396,57 +481,51 @@ describe('RESOURCES API', async () => {
       expect(response).to.have.status(201);
 
     });
-
-
   });
 
-  describe('DELETE /api/resources/:id', function() {
-    it('should remove the resources from the table', function() {
-      let resourceId;
-      return Resource.query()
+  describe('DELETE /api/resources/:id', async () => {
+    it('should remove the resources from the table', async () => {
+      const existingResource = await Resource
+        .query()
         .where({ userId })
-        .first()
-        .then(resource => {
-          resourceId = resource.id;
-          return chai
-            .request(app)
-            .delete(`${RESOURCES_ENDPOINT}/${resourceId}`)
-            .set('Authorization', bearerToken);
-        })
-        .then(res => {
-          expect(res).to.have.status(204);
-          return Resource.query()
-            .where({ userId, id: resourceId })
-            .first();
-        })
-        .then(resource => {
-          expect(resource).to.be.undefined;
-        });
+        .first();
+
+      const res = await chai
+        .request(app)
+        .delete(`${RESOURCES_ENDPOINT}/${existingResource.id}`)
+        .set('Authorization', bearerToken);
+
+      const resourceAfterDeleteRequest = await Resource
+        .query()
+        .where({ userId, id: existingResource.id })
+        .first();
+      
+      expect(res).to.have.status(204);
+      expect(resourceAfterDeleteRequest).to.be.undefined;
     });
 
-    it('should return 401 when JWT is not provided', function() {
-      return Resource.query()
+    it('should return 401 when JWT is not provided', async () => {
+      const existingResource = await Resource
+        .query()
         .where({ userId })
-        .first()
-        .then(resource => {
-          const resourceId = resource.id;
-          return chai.request(app).delete(`${RESOURCES_ENDPOINT}/${resourceId}`);
-        })
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .first();
+    
+      const res = await chai
+        .request(app)
+        .delete(`${RESOURCES_ENDPOINT}/${existingResource.id}`);
+      
+      expect(res).to.have.status(401);
     });
 
-    it('should return 404 when params id does not exist', function() {
+    it('should return 404 when params id does not exist', async () => {
       const id = Math.floor(Math.random() * 1000000);
 
-      return chai
+      const res = await chai
         .request(app)
         .delete(`${RESOURCES_ENDPOINT}/${id}`)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          expect(res).to.have.status(404);
-        });
+        .set('Authorization', bearerToken);
+
+      expect(res).to.have.status(404);
     });
   });
 });
