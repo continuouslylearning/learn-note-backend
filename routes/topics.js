@@ -186,15 +186,21 @@ router.post('/', requiredFields(['title']), validateTopic, async (req, res, next
       .first();
 
     if (topicExists) {
-      const err = {
+      throw {
         message: 'Topic with this title already exists',
         status: 400
       };
-      throw err;
     }
 
     const topic = await Topic.query()
-      .insert({ userId, title, parent, resourceOrder, lastOpened, notebook })
+      .insert({ 
+        userId, 
+        title, 
+        parent,
+        resourceOrder, 
+        lastOpened, 
+        notebook 
+      })
       .returning('*');
 
     delete topic.userId;
