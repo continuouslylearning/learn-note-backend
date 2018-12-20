@@ -19,7 +19,7 @@ const Folder = require('../models/folder');
 const Topic = require('../models/topic');
 const Resource = require('../models/resource');
 
-describe('RESOURCES API', function() {
+describe('RESOURCES API', async () => {
   const RESOURCES_ENDPOINT = '/api/resources';
   const RESOURCE_PROPERTIES = ['id', 'title', 'parent', 'uri', 'type', 'completed', 'lastOpened'];
   let bearerToken;
@@ -28,45 +28,43 @@ describe('RESOURCES API', function() {
   let token;
   let knex;
 
-  before(function() {
+  before(async function() {
     this.timeout(10000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
-    return dropTables(knex).then(() => createTables(knex));
+    await dropTables(knex);
+    await createTables(knex);
   });
 
-  beforeEach(function() {
-    return User.query()
+  beforeEach(async () => {
+    user = await User.query()
       .insert(usersData)
       .returning('*')
-      .first()
-      .then(_user => {
-        user = _user;
-        userId = user.id;
-        token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
-        bearerToken = `Bearer ${token}`;
-        return Folder.query().insert(foldersData);
-      })
-      .then(() => Topic.query().insert(topicsData))
-      .then(() => Resource.query().insert(resourcesData))
-      .then(() => knex.raw('SELECT setval(\'resources_id_seq\', (SELECT MAX(id) from "resources"));'))
-      .then(() => knex.raw('SELECT setval(\'topics_id_seq\', (SELECT MAX(id) from "topics"));'))
-      .then(() => knex.raw('SELECT setval(\'folders_id_seq\', (SELECT MAX(id) from "folders"));'))
-      .then(() => knex.raw('SELECT setval(\'users_id_seq\', (SELECT MAX(id) from "users"));'));
+      .first();
+
+    userId = user.id;
+    token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
+    bearerToken = `Bearer ${token}`;
+
+    await Folder.query().insert(foldersData);
+    await Topic.query().insert(topicsData);
+    await Resource.query().insert(resourcesData);
+    await knex.raw('SELECT setval(\'resources_id_seq\', (SELECT MAX(id) from "resources"));');
+    await knex.raw('SELECT setval(\'topics_id_seq\', (SELECT MAX(id) from "topics"));');
+    await knex.raw('SELECT setval(\'folders_id_seq\', (SELECT MAX(id) from "folders"));');
+    await knex.raw('SELECT setval(\'users_id_seq\', (SELECT MAX(id) from "users"));');
   });
 
-  afterEach(function() {
-    return Resource.query()
-      .delete()
-      .where({})
-      .then(() => Topic.query().delete())
-      .then(() => Folder.query().delete())
-      .then(() => User.query().delete());
+  afterEach(async () => {
+    await Resource.query().delete();
+    await Topic.query().delete();
+    await Folder.query().delete();
+    await User.query().delete();
   });
 
-  after(function() {
-    return dbDisconnect();
+  after(async () => {
+    await dbDisconnect();
   });
 
   describe('GET /api/resources', async () => {
