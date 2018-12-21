@@ -12,120 +12,112 @@ const { TEST_DB_URI } = require('../config');
 const User = require('../models/user');
 
 
-describe('USERS ENDPOINT', function(){
+describe('USERS ENDPOINT', async () => {
   const USER_ENDPOINT = '/api/users';
   let knex;
 
-  before(function(){
+  before(async function(){
     this.timeout(4000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
-    return Promise.all(usersData.map(user => User.hashPassword(user.password)))
-      .then(hashes => {
-        usersData.forEach((user, index) => {
-          user.password = hashes[index];
-        });
-      })
-      .then(() => dropTables(knex))
-      .then(() => createTables(knex));
+    const hashes = await Promise.all(usersData.map(user => User.hashPassword(user.password)));
+    usersData.forEach((user, index) => {
+      user.password = hashes[index];
+    });
+    await dropTables(knex);
+    await createTables(knex);
   });
 
-  this.beforeEach(function(){
-    return User
+  beforeEach(async () => {
+    await User
       .query()
       .insert(usersData);
   });
 
-  afterEach(function(){
-    return User
+  afterEach(async () => {
+    await User
       .query()
       .delete();
   });
 
-  after(function(){
-    return dbDisconnect();
+  after(async () => {
+    await dbDisconnect();
   });
 
-  describe('POST /api/users', function(){
+  describe('POST /api/users', async () => {
     const newUser = {
       email: 'user@gmail.com',
       name: 'Anonymous',
       password: 'password'
     };
 
-    it('should create a new user', function(){
-      return chai.request(app)
+    it('should create a new user', async () => {
+      const res = await chai
+        .request(app)
         .post(USER_ENDPOINT)
-        .send(newUser)
-        .then(res => {
-          expect(res).to.have.status(201);
-          const userId = res.body.id;
-          return User
-            .query()
-            .where({ id: userId })
-            .first();
-        })
-        .then(user => {
-          expect(user.email).to.equal(newUser.email);
-          expect(user.name).to.equal(newUser.name);
-          return user.validatePassword(newUser.password);
-        })
-        .then(passwordIsValid => {
-          expect(passwordIsValid).to.be.true;
-        });
+        .send(newUser);
+
+      const userId = res.body.id;
+      const user = await User
+        .query()
+        .where({ id: userId })
+        .first();
+
+      const passwordIsValid = await user.validatePassword(newUser.password);
+     
+      expect(res).to.have.status(201);
+      expect(user.email).to.equal(newUser.email);
+      expect(user.name).to.equal(newUser.name);
+      expect(passwordIsValid).to.be.true;
     });
 
-    it('should return 400 when username is missing', function(){
-      return chai.request(app)
+    it('should return 400 when username is missing', async () => {
+      const res = await chai
+        .request(app)
         .post(USER_ENDPOINT)
-        .send({ password: newUser.password, name: newUser.name })
-        .then(res => {
-          expect(res).to.have.status(400);
-        });
+        .send({ password: newUser.password, name: newUser.name });
+      expect(res).to.have.status(400);
     });
     
-    it('should return 400 when password is missing', function(){
-      return chai.request(app)
+    it('should return 400 when password is missing', async () => {
+      const res = await chai
+        .request(app)
         .post(USER_ENDPOINT)
-        .send({ email: newUser.email, name: newUser.name })
-        .then(res => {
-          expect(res).to.have.status(400);
-        });
+        .send({ email: newUser.email, name: newUser.name });
+      expect(res).to.have.status(400);
     });
 
-    it('should reject duplicate emails', function(){
-      return User
+    it('should reject duplicate emails', async () => {
+      const userWithSameEmail = await User
         .query()
-        .first()
-        .then(user => {
-          const existingEmail = user.email;
-          return chai.request(app)
-            .post(USER_ENDPOINT)
-            .send({ ...newUser, email: existingEmail });
-        })
-        .then(res => {
-          expect(res).to.have.status(400);
-        });
-    });
+        .first();
 
-    it('should return 400 when password is less than 8 characters', function(){
-      return chai.request(app)
+      const existingEmail = userWithSameEmail.email;
+      const res = await chai
+        .request(app)
         .post(USER_ENDPOINT)
-        .send({ ...newUser, password: newUser.password.slice(0, 7)})
-        .then(res => {
-          expect(res).to.have.status(400);
-        });
+        .send({ ...newUser, email: existingEmail });
+
+      expect(res).to.have.status(400);
     });
 
-    it('should return 400 when email is invalid', function(){
-      return chai.request(app)
+    it('should return 400 when password is less than 8 characters', async () => {
+      const res = await chai
+        .request(app)
         .post(USER_ENDPOINT)
-        .send({ ...newUser, email: 'invalid_email' })
-        .then(res => {
-          expect(res).to.have.status(400);
-        });
+        .send({ ...newUser, password: newUser.password.slice(0, 7)});
+
+      expect(res).to.have.status(400);
     });
 
+    it('should return 400 when email is invalid', async () => {
+      const res = await chai
+        .request(app)
+        .post(USER_ENDPOINT)
+        .send({ ...newUser, email: 'invalid_email' });
+
+      expect(res).to.have.status(400);
+    });
   });
 });

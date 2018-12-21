@@ -1,31 +1,42 @@
 const express = require('express');
 const User = require('../models/user');
 const validateUser = require('./validation/user');
+const { requiredFields } = require('./validation/common');
 
 const router = express.Router();
 
-router.post('/', validateUser, (req, res, next) => {
-  const { password, email, name } = req.body;
+router.post('/', 
+  requiredFields(['email', 'password', 'name']), 
+  validateUser, 
+  async (req, res, next) => {
+    const { password, email, name } = req.body;
 
-  User.query()
-    .where({ email })
-    .first()
-    .then(user => {
+    try {
+      const user = await User.query()
+        .where({ email })
+        .first();
+
       if (user) {
-        const err = new Error('User with this email already exists');
-        err.status = 400;
-        return Promise.reject(err);
+        throw {
+          message: 'User with this email already exists',
+          status: 400
+        };
       }
-      return User.hashPassword(password);
-    })
-    .then(hash => {
-      return User.query().insert({ email, password: hash, name });
-    })
-    .then(user => {
-      return res.status(201).json(user.serialize());
-    })
-    .catch(next);
-});
+      const hash = await User.hashPassword(password);
+      
+      const newUser = await User
+        .query()
+        .insert({ 
+          email, 
+          password: hash, 
+          name 
+        });
+
+      return res.status(201).json(newUser.serialize());
+    } catch(e){
+      next(e);
+    }
+  });
 
 router.get('/:id', (req, res, next) => {
   const userId = req.params.id;

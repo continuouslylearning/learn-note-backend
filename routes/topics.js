@@ -62,7 +62,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   const userId = req.user.id;
   const topicId = req.params.id;
   // Configure ?notebook to be true by default
@@ -72,68 +72,70 @@ router.get('/:id', (req, res, next) => {
   // Configure ?resourceOrder to be true by default
   const shouldShowResourceOrder = !(req.query.resourceOrder === 'false');
 
-  return Folder.query()
-    .select(
-      'topics.id as id',
-      'topics.parent as folderId',
-      'topics.title',
-      'topics.createdAt',
-      'topics.updatedAt',
-      'folders.title as folderTitle'
-    )
-    .rightJoin('topics', 'folders.id', 'topics.parent')
-    .modify(query => {
-      if (shouldShowNotebook) query.select('topics.notebook as notebook');
-      if (shouldShowResourceOrder) query.select('topics.resourceOrder as resourceOrder');
-      if (shouldShowResources) {
-        query
-          .select(
-            'resources.id as resourceId',
-            'resources.title as resourceTitle',
-            'resources.type as type',
-            'resources.uri as uri',
-            'resources.completed as completed',
-            'resources.lastOpened as lastOpened'
-          )
-          .leftJoin('resources', 'topics.id', 'resources.parent');
-      }
-      return query;
-    })
-    .where({ 'topics.userId': userId, 'topics.id': topicId })
-    .then(results => {
-      if (!results.length) return Promise.reject();
-      const item = results[0];
+  try {
+    const results = await Topic.query()
+      .select(
+        'topics.id as id',
+        'topics.parent as folderId',
+        'topics.title',
+        'topics.createdAt',
+        'topics.updatedAt',
+        'folders.title as folderTitle'
+      )
+      .leftJoin('folders', 'folders.id', 'topics.parent')
+      .modify(query => {
+        if (shouldShowNotebook) query.select('topics.notebook as notebook');
+        if (shouldShowResourceOrder) query.select('topics.resourceOrder as resourceOrder');
+        if (shouldShowResources) {
+          query
+            .select(
+              'resources.id as resourceId',
+              'resources.title as resourceTitle',
+              'resources.type as type',
+              'resources.uri as uri',
+              'resources.completed as completed',
+              'resources.lastOpened as lastOpened'
+            )
+            .leftJoin('resources', 'topics.id', 'resources.parent');
+        }
+        return query;
+      })
+      .where({ 'topics.userId': userId, 'topics.id': topicId });
 
-      const topic = {
-        id: item.id,
-        title: item.title,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt
-      };
-      appendParent(topic, item.folderId, item.folderTitle);
+    if (!results.length) return next();
+    const item = results[0];
 
-      if (shouldShowNotebook) topic.notebook = item.notebook;
+    const topic = {
+      id: item.id,
+      title: item.title,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    };
+    appendParent(topic, item.folderId, item.folderTitle);
 
-      if (shouldShowResourceOrder) topic.resourceOrder = item.resourceOrder;
+    if (shouldShowNotebook) topic.notebook = item.notebook;
 
-      if (shouldShowResources) {
-        topic.resources = [];
-        results.forEach(item => {
-          if (!item.resourceId) return;
-          topic.resources.push({
-            id: item.resourceId,
-            title: item.resourceTitle,
-            type: item.type,
-            uri: item.uri,
-            completed: item.completed,
-            lastOpened: item.lastOpened
-          });
+    if (shouldShowResourceOrder) topic.resourceOrder = item.resourceOrder;
+
+    if (shouldShowResources) {
+      topic.resources = [];
+      results.forEach(item => {
+        if (!item.resourceId) return;
+        topic.resources.push({
+          id: item.resourceId,
+          title: item.resourceTitle,
+          type: item.type,
+          uri: item.uri,
+          completed: item.completed,
+          lastOpened: item.lastOpened
         });
-      }
+      });
+    }
 
-      return res.json(topic);
-    })
-    .catch(next);
+    return res.json(topic);
+  } catch(e){
+    return next(e);
+  }
 });
 
 router.put('/:id', validateTopic, async (req, res, next) => {
