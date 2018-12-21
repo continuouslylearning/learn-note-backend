@@ -3,15 +3,6 @@ const EMAIL_PATTERN = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-
 function validateUser(req, res, next){
 
   const { email } = req.body;
-  
-  const requiredFields = ['email', 'password', 'name'];
-  const missingField = requiredFields.find(field => ! (field in req.body));
-
-  if(missingField) {
-    const err = new Error(`Missing ${missingField} field`);
-    err.status = 400;
-    return next(err);
-  }
 
   const trimmedFields = ['email', 'password'];
   const nonTrimmedFields = trimmedFields.find(field => field in req.body && (req.body[field].trim() !== req.body[field]));

@@ -10,15 +10,16 @@ chai.use(chaiHttp);
 
 const app = require('../index');
 const { dbConnect, dbDisconnect, dbGet, createTables, dropTables } = require('../db');
-const { usersData, foldersData, topicsData } = require('./seed');
+const { usersData, foldersData, topicsData, resourcesData } = require('./seed');
 
 const { JWT_SECRET, TEST_DB_URI } = require('../config');
 
 const User = require('../models/user');
 const Folder = require('../models/folder');
 const Topic = require('../models/topic');
+const Resource = require('../models/resource');
 
-describe('TOPICS API', function() {
+describe('TOPICS API', async () => {
   const TOPICS_ENDPOINT = '/api/topics';
   const allTopicProperties = ['id', 'title', 'parent', 'notebook', 'resourceOrder', 'createdAt', 'updatedAt'];
   const topicPropertiesWithoutQueryParams = ['id', 'title', 'parent', 'createdAt', 'updatedAt'];
@@ -28,40 +29,38 @@ describe('TOPICS API', function() {
   let knex;
   let bearerToken;
 
-  before(function() {
+  before(async function() {
     this.timeout(4000);
     dbConnect(TEST_DB_URI);
     knex = dbGet();
     Model.knex(knex);
-    return dropTables(knex).then(() => createTables(knex));
+    await dropTables(knex);
+    await createTables(knex);
   });
 
-  beforeEach(function() {
-    return User.query()
+  beforeEach(async () => {
+    user = await User.query()
       .insert(usersData)
       .returning('*')
-      .first()
-      .then(_user => {
-        user = _user;
-        userId = user.id;
-        token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
-        bearerToken = `Bearer ${token}`;
-        return Folder.query().insert(foldersData);
-      })
-      .then(() => Topic.query().insert(topicsData))
-      .then(() => knex.raw('SELECT setval(\'topics_id_seq\', (SELECT MAX(id) from "topics"));'))
-      .then(() => knex.raw('SELECT setval(\'folders_id_seq\', (SELECT MAX(id) from "folders"));'))
-      .then(() => knex.raw('SELECT setval(\'users_id_seq\', (SELECT MAX(id) from "users"));'));
+      .first();
+    userId = user.id;
+    token = jwt.sign({ user: user.serialize() }, JWT_SECRET, { subject: user.email });
+    bearerToken = `Bearer ${token}`;
+    await Folder.query().insert(foldersData);
+    await Topic.query().insert(topicsData);
+    await knex.raw('SELECT setval(\'topics_id_seq\', (SELECT MAX(id) from "topics"));');
+    await knex.raw('SELECT setval(\'folders_id_seq\', (SELECT MAX(id) from "folders"));');
+    await knex.raw('SELECT setval(\'users_id_seq\', (SELECT MAX(id) from "users"));');
   });
 
-  afterEach(function() {
-    return Topic.query().delete()
-      .then(() => Folder.query().delete())
-      .then(() => User.query().delete());
+  afterEach(async () => {
+    await Topic.query().delete();
+    await Folder.query().delete();
+    await User.query().delete();
   });
 
-  after(function() {
-    return dbDisconnect();
+  after(async () => {
+    await dbDisconnect();
   });
 
   describe('GET /api/topics', async () => {
@@ -192,92 +191,167 @@ describe('TOPICS API', function() {
 
   });
 
-  describe('POST /api/topics', function() {
+  describe('GET /api/topics/:id', async () => {
+
+    let existingTopic;
+
+    beforeEach(async () => {
+      await Resource.query().insert(resourcesData);
+      existingTopic = await Topic
+        .query()
+        .where({ userId })
+        .first();
+    });
+
+    afterEach(async () => {
+      await Resource.query().delete();
+    });
+
+    it('should return the correct topic with correct fields', async () => {
+
+      const notebook = {
+        'ops': [
+          {
+            'insert': 'fgdfg\ndfg\ngd\nfg\ndg\ndf\ng\ngdfg\nd\nfg\ng\n'
+          }
+        ]};
+
+      existingTopic = await Topic
+        .query()
+        .update({
+          notebook: JSON.stringify(notebook)
+        })
+        .where({ userId, id: existingTopic.id })
+        .returning('*')
+        .first();
+
+      const dbResources = await Resource
+        .query()
+        .where({ userId, parent: existingTopic.id });
+      
+      const res = await chai
+        .request(app)
+        .get(`${TOPICS_ENDPOINT}/${existingTopic.id}`)
+        .set('Authorization', bearerToken);
+
+      const resTopic = res.body;
+      expect(res).to.have.status(200);
+      expect(resTopic.title).to.equal(existingTopic.title);
+      expect(new Date(resTopic.createdAt)).to.deep.equal(new Date(existingTopic.createdAt));
+      expect(new Date(resTopic.updatedAt)).to.deep.equal(new Date(existingTopic.updatedAt));
+      expect(resTopic.parent.id).to.equal(existingTopic.parent);
+      expect(resTopic.notebook).to.deep.equal(existingTopic.notebook);
+      
+      dbResources.forEach((dbResource, index) => {
+        const resResource = res.body.resources[index];
+        expect(dbResource.completed).to.equal(resResource.completed);
+        expect(new Date(dbResource.lastOpened)).to.deep.equal(new Date(resResource.lastOpened));
+        expect(dbResource.title).to.equal(resResource.title);
+        expect(dbResource.type).to.equal(resResource.type);
+        expect(dbResource.uri).to.equal(resResource.uri);
+      });
+
+    });
+
+    it('should return 404 when params id is non-existent', async () => {
+      const nonexistentTopicId = Math.floor(Math.random() * 1000000);
+      const res = await chai
+        .request(app)
+        .get(`${TOPICS_ENDPOINT}/${nonexistentTopicId}`)
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(404);
+    });
+
+    it('should return 401 when JWT is not provided', async () => {
+
+      const res = await chai
+        .request(app)
+        .get(`${TOPICS_ENDPOINT}/${existingTopic.id}`);
+      
+      expect(res).to.have.status(401);
+    });
+  });
+
+  describe('POST /api/topics', async () => {
     const newTopic = {
       title: 'Hash maps'
     };
 
-    it('should insert topic into table when valid parent is given', function() {
-      let resTopic;
-
-      return chai
+    it('should insert topic into table when valid parent is given', async () => {
+      const res = await chai
         .request(app)
         .post(TOPICS_ENDPOINT)
-        .set('Authorization', `Bearer ${token}`)
-        .send(newTopic)
-        .then(res => {
-          resTopic = res.body;
-          const topicId = resTopic.id;
-          expect(res).to.have.status(201);
-          expect(resTopic.parent).to.be.null;
-          expect(resTopic).to.have.keys(allTopicProperties);
-          expect(resTopic.title).to.equal(newTopic.title);
-          return Topic.query()
-            .where({ id: topicId, userId })
-            .first();
-        })
-        .then(dbTopic => {
-          expect(dbTopic.title).to.equal(resTopic.title);
-          expect(dbTopic.parent).to.equal(resTopic.parent);
-          expect(dbTopic.notebook).to.equal(resTopic.notebook);
-          expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
-          expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
-        });
+        .set('Authorization', bearerToken)
+        .send(newTopic);
+        
+      const resTopic = res.body;
+      expect(res).to.have.status(201);
+      expect(resTopic.parent).to.be.null;
+      expect(resTopic).to.have.keys(allTopicProperties);
+      expect(resTopic.title).to.equal(newTopic.title);
+
+      const dbTopic = await Topic
+        .query()
+        .where({ id: resTopic.id, userId })
+        .first();
+
+      expect(dbTopic.title).to.equal(resTopic.title);
+      expect(dbTopic.parent).to.equal(resTopic.parent);
+      expect(dbTopic.notebook).to.equal(resTopic.notebook);
+      expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
+      expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
     });
 
-    it('should insert topic into table with null value for `parent` when parent isnt provided', function() {
-      let resTopic;
-
-      return chai
+    it('should insert topic into table with null value for `parent` when parent isnt provided', async () => {
+      const res = await chai
         .request(app)
         .post(TOPICS_ENDPOINT)
-        .set('Authorization', `Bearer ${token}`)
-        .send(newTopic)
-        .then(res => {
-          resTopic = res.body;
-          const topicId = resTopic.id;
-          expect(res).to.have.status(201);
-          expect(resTopic.parent).to.be.null;
-          expect(resTopic).to.have.keys(allTopicProperties);
-          expect(resTopic.title).to.equal(newTopic.title);
-          return Topic.query()
-            .where({ id: topicId, userId })
-            .first();
-        })
-        .then(dbTopic => {
-          expect(dbTopic.title).to.equal(resTopic.title);
-          expect(dbTopic.parent).to.equal(resTopic.parent);
-          expect(dbTopic.notebook).to.equal(resTopic.notebook);
-          expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
-          expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
-        });
+        .set('Authorization', bearerToken)
+        .send(newTopic);
+
+      const resTopic = res.body;
+      const topicId = resTopic.id;
+      expect(res).to.have.status(201);
+      expect(resTopic.parent).to.be.null;
+      expect(resTopic).to.have.keys(allTopicProperties);
+      expect(resTopic.title).to.equal(newTopic.title);
+
+      const dbTopic = await Topic
+        .query()
+        .where({ id: topicId, userId })
+        .first();
+
+      expect(dbTopic.title).to.equal(resTopic.title);
+      expect(dbTopic.parent).to.equal(resTopic.parent);
+      expect(dbTopic.notebook).to.equal(resTopic.notebook);
+      expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
+      expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
     });
 
-    it('should return 401 when JWT is missing', function() {
-      return chai
+    it('should return 401 when JWT is missing', async () => {
+      const res = await chai
         .request(app)
         .post(TOPICS_ENDPOINT)
-        .send(newTopic)
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .send(newTopic);
+
+      expect(res).to.have.status(401);
     });
 
-    it('should return 400 when the parent id is invalid', function() {
+    it('should return 400 when the parent id is invalid', async () => {
       const parent = Math.floor(Math.max(1000000));
       const topic = {
         title: 'Git',
         parent
       };
 
-      return chai
+      const res = await chai
         .request(app)
         .post(TOPICS_ENDPOINT)
         .send(topic)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          expect(res).to.have.status(400);
-        });
+        .set('Authorization', bearerToken);
+
+      expect(res).to.have.status(400);
     });
 
     it('should return 400 when title is missing', async () => {
@@ -301,73 +375,67 @@ describe('TOPICS API', function() {
     });
   });
 
-  describe('PUT /api/topics/:id', function() {
+  describe('PUT /api/topics/:id', async () => {
     const updatedTopic = {
       parent: 3001,
       title: 'Angular',
       notebook: '[{ "insert": "value", "insert": "value2"}]'
     };
 
-    it('should update the topic in the table', function() {
-      let resTopic;
-      let topicId;
-      return Topic.query()
+    it('should update the topic in the table', async () => {
+      const topic = await Topic
+        .query()
         .where({ userId })
-        .first()
-        .then(topic => {
-          topicId = topic.id;
-          return chai
-            .request(app)
-            .put(`${TOPICS_ENDPOINT}/${topicId}`)
-            .send(updatedTopic)
-            .set('Authorization', `Bearer ${token}`);
-        })
-        .then(res => {
-          resTopic = res.body;
-          expect(res).to.have.status(201);
-          expect(resTopic).to.have.keys(allTopicProperties);
-          expect(resTopic.title).to.equal(updatedTopic.title);
-          expect(resTopic.parent.id).to.equal(updatedTopic.parent);
-          return Topic.query()
-            .where({ userId, id: topicId })
-            .first();
-        })
-        .then(dbTopic => {
-          expect(dbTopic.title).to.equal(updatedTopic.title);
-          expect(dbTopic.parent).to.equal(updatedTopic.parent);
-          expect(dbTopic.notebook).to.deep.equal(resTopic.notebook);
-          expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
-          expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
-        });
+        .first();
+
+      const res = await chai
+        .request(app)
+        .put(`${TOPICS_ENDPOINT}/${topic.id}`)
+        .send(updatedTopic)
+        .set('Authorization', bearerToken);
+   
+      const resTopic = res.body;
+      expect(res).to.have.status(201);
+      expect(resTopic).to.have.keys(allTopicProperties);
+      expect(resTopic.title).to.equal(updatedTopic.title);
+      expect(resTopic.parent.id).to.equal(updatedTopic.parent);
+
+      const dbTopic = await Topic
+        .query()
+        .where({ userId, id: topic.id })
+        .first();
+  
+      expect(dbTopic.title).to.equal(updatedTopic.title);
+      expect(dbTopic.parent).to.equal(updatedTopic.parent);
+      expect(dbTopic.notebook).to.deep.equal(resTopic.notebook);
+      expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
+      expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
     });
 
-    it('should return 401 when JWT is not provided', function() {
-      return Topic.query()
+    it('should return 401 when JWT is not provided', async () => {
+      const topic = await Topic
+        .query()
         .where({ userId })
-        .first()
-        .then(topic => {
-          const topicId = topic.id;
-          return chai
-            .request(app)
-            .put(`${TOPICS_ENDPOINT}/${topicId}`)
-            .send(updatedTopic);
-        })
-        .then(res => {
-          expect(res).to.have.status(401);
-        });
+        .first();
+
+      const res = await chai
+        .request(app)
+        .put(`${TOPICS_ENDPOINT}/${topic.id}`)
+        .send(updatedTopic);
+      
+      expect(res).to.have.status(401);
     });
 
-    it('should return 404 when params id does not exist', function() {
+    it('should return 404 when params id does not exist', async() => {
       const id = Math.floor(Math.random() * 1000000);
 
-      return chai
+      const res = await chai
         .request(app)
         .put(`${TOPICS_ENDPOINT}/${id}`)
         .send(updatedTopic)
-        .set('Authorization', `Bearer ${token}`)
-        .then(res => {
-          expect(res).to.have.status(404);
-        });
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(404);
     });
   });
 
