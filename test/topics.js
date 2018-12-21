@@ -212,7 +212,7 @@ describe('TOPICS API', async () => {
       const notebook = {
         'ops': [
           {
-            'insert': 'fgdfg\ndfg\ngd\nfg\ndg\ndf\ng\ngdfg\nd\nfg\ng\n'
+            'insert': 'An empty notebook\n'
           }
         ]};
 
@@ -312,7 +312,14 @@ describe('TOPICS API', async () => {
 
   describe('POST /api/topics', async () => {
     const newTopic = {
-      title: 'Hash maps'
+      title: 'Hash maps',
+      notebook: {
+        'ops': [
+          {
+            'insert': 'An empty notebook\n'
+          }
+        ]
+      }
     };
 
     it('should insert topic into table when valid parent is given', async () => {
@@ -335,7 +342,7 @@ describe('TOPICS API', async () => {
 
       expect(dbTopic.title).to.equal(resTopic.title);
       expect(dbTopic.parent).to.equal(resTopic.parent);
-      expect(dbTopic.notebook).to.equal(resTopic.notebook);
+      expect(dbTopic.notebook).to.deep.equal(resTopic.notebook);
       expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
       expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
     });
@@ -361,7 +368,7 @@ describe('TOPICS API', async () => {
 
       expect(dbTopic.title).to.equal(resTopic.title);
       expect(dbTopic.parent).to.equal(resTopic.parent);
-      expect(dbTopic.notebook).to.equal(resTopic.notebook);
+      expect(dbTopic.notebook).to.deep.equal(resTopic.notebook);
       expect(new Date(dbTopic.createdAt)).to.deep.equal(new Date(resTopic.createdAt));
       expect(new Date(dbTopic.updatedAt)).to.deep.equal(new Date(resTopic.updatedAt));
     });
@@ -453,13 +460,47 @@ describe('TOPICS API', async () => {
 
       expect(response).to.have.status(400);
     });
+
+    it('should return 400 when notebook field is not in JSON format', async () => {
+      const response = await chai
+        .request(app)
+        .post(TOPICS_ENDPOINT)
+        .send({
+          ...newTopic,
+          notebook: 'Not a valid JSON object'
+        })
+        .set('Authorization', bearerToken);
+
+      expect(response).to.have.status(400);
+    });
+
+    it('should return 400 when notebook field is not a valid Quill JS delta', async () => {
+
+      const response = await chai
+        .request(app)
+        .post(`${TOPICS_ENDPOINT}`)
+        .send({
+          ...newTopic,
+          notebook: {
+            ops: 'Not an ops array'
+          }
+        })
+        .set('Authorization', bearerToken);
+      expect(response).to.have.status(400);
+    });
   });
 
   describe('PUT /api/topics/:id', async () => {
     const updatedTopic = {
       parent: 3001,
       title: 'Angular',
-      notebook: '[{ "insert": "value", "insert": "value2"}]'
+      notebook: {
+        'ops': [
+          {
+            'insert': 'An empty notebook\n'
+          }
+        ]
+      }
     };
 
     let topic;
@@ -561,6 +602,34 @@ describe('TOPICS API', async () => {
         .set('Authorization', bearerToken);
       
       expect(res).to.have.status(400);
+    });
+
+    it('should return 400 when notebook field is not JSON', async () => {
+
+      const response = await chai
+        .request(app)
+        .put(`${TOPICS_ENDPOINT}/${topic.id}`)
+        .send({
+          ...updatedTopic,
+          notebook: 'Not JSON'
+        })
+        .set('Authorization', bearerToken);
+      expect(response).to.have.status(400);
+    });
+
+    it('should return 400 when notebook field is not a valid Quill JS delta', async () => {
+
+      const response = await chai
+        .request(app)
+        .put(`${TOPICS_ENDPOINT}/${topic.id}`)
+        .send({
+          ...updatedTopic,
+          notebook: {
+            ops: 'Not an ops array'
+          }
+        })
+        .set('Authorization', bearerToken);
+      expect(response).to.have.status(400);
     });
   });
 
