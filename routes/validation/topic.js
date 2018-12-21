@@ -24,7 +24,7 @@ function validateTopic(req, res, next) {
     req.body.parent = Number(parent);
 
     if (Number.isNaN(req.body.parent)) {
-      const err = new Error('Parent is invalid.');
+      const err = new Error('Parent id must be an integer.');
       err.status = 400;
       return next(err);
     }

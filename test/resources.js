@@ -448,7 +448,7 @@ describe('RESOURCES API', async () => {
 
     });
 
-    it('should not reject requests with duplicate resource titles not within the same topic', async () => {
+    it('should not reject requests with a duplicate resource title not within the same topic', async () => {
       
       const existingResource = await Resource
         .query()

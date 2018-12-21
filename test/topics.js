@@ -241,6 +241,7 @@ describe('TOPICS API', async () => {
       expect(new Date(resTopic.updatedAt)).to.deep.equal(new Date(existingTopic.updatedAt));
       expect(resTopic.parent.id).to.equal(existingTopic.parent);
       expect(resTopic.notebook).to.deep.equal(existingTopic.notebook);
+      expect(resTopic.resources.length).to.equal(dbResources.length);
       
       dbResources.forEach((dbResource, index) => {
         const resResource = res.body.resources[index];
@@ -270,6 +271,42 @@ describe('TOPICS API', async () => {
         .get(`${TOPICS_ENDPOINT}/${existingTopic.id}`);
       
       expect(res).to.have.status(401);
+    });
+
+    it('should hide resources when the resources query parameter is set to `false`', async() => {
+
+      const res = await chai
+        .request(app)
+        .get(`${TOPICS_ENDPOINT}/${existingTopic.id}`)
+        .query({ resources: 'false' })
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(200);
+      expect(res.body).to.not.have.key('resources');
+    });
+
+    it('should hide notebook when the notebook query parameter is set to `false`', async() => {
+
+      const res = await chai
+        .request(app)
+        .get(`${TOPICS_ENDPOINT}/${existingTopic.id}`)
+        .query({ notebook: 'false' })
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(200);
+      expect(res.body).to.not.have.key('notebook');
+    });
+
+    it('should hide resourceOrder when the resourceOrder query parameter is set to `false`', async() => {
+
+      const res = await chai
+        .request(app)
+        .get(`${TOPICS_ENDPOINT}/${existingTopic.id}`)
+        .query({ notebook: 'false' })
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(200);
+      expect(res.body).to.not.have.key('resourceOrder');
     });
   });
 
@@ -373,6 +410,49 @@ describe('TOPICS API', async () => {
       
       expect(response).to.have.status(400);
     });
+
+    it('should return 400 when the title is an empty string', async () => {
+      const res = await chai
+        .request(app)
+        .post(TOPICS_ENDPOINT)
+        .send({
+          title: ' '
+        })
+        .set('Authorization', bearerToken);
+
+      expect(res).to.have.status(400);
+    });
+
+    it('should return 400 for duplicate topic titles', async () => {
+
+      const topicWithSameName = await Topic
+        .query()
+        .where({ userId })
+        .first();
+      
+      const response = await chai
+        .request(app)
+        .post(TOPICS_ENDPOINT)
+        .send({
+          title: topicWithSameName.title
+        })
+        .set('Authorization', bearerToken);
+      
+      expect(response).to.have.status(400);
+    });
+
+    it('should return 400 when parent id is a non-integer', async () => {
+      const response = await chai
+        .request(app)
+        .post(TOPICS_ENDPOINT)
+        .send({
+          ...newTopic,
+          parent: 'Non-integer parent Id'
+        })
+        .set('Authorization', bearerToken);
+
+      expect(response).to.have.status(400);
+    });
   });
 
   describe('PUT /api/topics/:id', async () => {
@@ -382,12 +462,16 @@ describe('TOPICS API', async () => {
       notebook: '[{ "insert": "value", "insert": "value2"}]'
     };
 
-    it('should update the topic in the table', async () => {
-      const topic = await Topic
+    let topic;
+
+    beforeEach(async () => {
+      topic = await Topic
         .query()
         .where({ userId })
         .first();
+    });
 
+    it('should update the topic in the table', async () => {
       const res = await chai
         .request(app)
         .put(`${TOPICS_ENDPOINT}/${topic.id}`)
@@ -413,11 +497,6 @@ describe('TOPICS API', async () => {
     });
 
     it('should return 401 when JWT is not provided', async () => {
-      const topic = await Topic
-        .query()
-        .where({ userId })
-        .first();
-
       const res = await chai
         .request(app)
         .put(`${TOPICS_ENDPOINT}/${topic.id}`)
@@ -436,6 +515,52 @@ describe('TOPICS API', async () => {
         .set('Authorization', bearerToken);
       
       expect(res).to.have.status(404);
+    });
+
+    it('should return 400 when parent id is a non-integer', async() => {
+
+      const res = await chai
+        .request(app)
+        .put(`${TOPICS_ENDPOINT}/${topic.id}`)
+        .send({
+          ...updatedTopic,
+          parent: 'Non-integer parent id'
+        })
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(400);
+    });
+
+    it('should return 400 when the title is an empty string', async() => {
+
+      const res = await chai
+        .request(app)
+        .put(`${TOPICS_ENDPOINT}/${topic.id}`)
+        .send({
+          title: ' '
+        })
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(400);
+    });
+
+    it('should return 400 when the title is a duplicate', async () => {
+      
+      const topicWithSameName = await Topic
+        .query()
+        .where({ userId })
+        .whereNot({ id: topic.id })
+        .first();
+      
+      const res = await chai
+        .request(app)
+        .put(`${TOPICS_ENDPOINT}/${topic.id}`)
+        .send({
+          title: topicWithSameName.title
+        })
+        .set('Authorization', bearerToken);
+      
+      expect(res).to.have.status(400);
     });
   });
 
@@ -490,3 +615,5 @@ describe('TOPICS API', async () => {
     });
   });
 });
+
+
