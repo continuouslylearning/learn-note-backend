@@ -2,7 +2,7 @@ const Folder = require('../../models/folder');
 
 function validateTopic(req, res, next) {
   const userId = req.user.id;
-  const { title, parent } = req.body;
+  const { title, parent, notebook } = req.body;
 
   if ('title' in req.body && typeof title !== 'string') {
     try {
@@ -29,6 +29,25 @@ function validateTopic(req, res, next) {
       return next(err);
     }
   }
+
+  if ('notebook' in req.body){
+    let delta;
+    try {
+      delta = JSON.parse(notebook);
+    } catch(e){
+      return next({
+        message: '`Notebook` must be JSON',
+        status: 400
+      });
+    }
+    if(!delta.ops || !Array.isArray(delta.ops)){
+      return next ({
+        message: 'The notebook JSON is not a valid QuillJS delta',
+        status: 400
+      });
+    }
+  }
+
   if ('parent' in req.body && parent !== null) {
     return Folder.query()
       .where({ userId, id: parent })
@@ -43,6 +62,7 @@ function validateTopic(req, res, next) {
       })
       .catch(next);
   }
+
   return next();
 }
 
